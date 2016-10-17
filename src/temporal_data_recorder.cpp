@@ -144,6 +144,7 @@ void split(list<joint_state> raw_data, list<joint_state> output) {
             pos_sum += it->pos;
             vel_sum += it->vel;
             eff_sum += it->eff;
+            it++;
         }
 
         joint_state result;
