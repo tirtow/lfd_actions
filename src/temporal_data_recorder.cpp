@@ -29,8 +29,6 @@ typedef map<string, list<joint_state> >::const_iterator map_cit;
 // The topic the arm joints publish to
 const string ARM_TOPIC = "/joint_states";
 
-// map of joint name to its states for each time step for the joint values
-//map<string, list<joint_state> > data;
 list<joint_state> joint_1;
 list<joint_state> joint_2;
 list<joint_state> joint_3;
@@ -39,6 +37,15 @@ list<joint_state> joint_5;
 list<joint_state> joint_6;
 list<joint_state> finger_1;
 list<joint_state> finger_2;
+
+list<joint_state> joint_1_temp;
+list<joint_state> joint_2_temp;
+list<joint_state> joint_3_temp;
+list<joint_state> joint_4_temp;
+list<joint_state> joint_5_temp;
+list<joint_state> joint_6_temp;
+list<joint_state> finger_1_temp;
+list<joint_state> finger_2_temp;
 
 /**
  * Reads a character without blocking execution
@@ -114,6 +121,40 @@ void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
     }
 }
 
+void split(list<joint_state> raw_data, list<joint_state> output) {
+    list<joint_state>::size_type size = raw_data.size();
+    int step = std::ceil(size / 10.0);
+
+    for (list<joint_state>::size_type start = 0; start < raw_data.size(); start += step) {
+        double pos_sum = 0;
+        double vel_sum = 0;
+        double eff_sum = 0;
+
+        list<joint_state>::const_iterator it = raw_data.begin();
+        for (int i = 0; i < start; i++) {
+            it++;
+        }
+
+        list<joint_state>::const_iterator stop = it;
+        for (int i = 0; i < step; i++) {
+            stop++;
+        }
+
+        while (it != stop && it != raw_data.end()) {
+            pos_sum += it->pos;
+            vel_sum += it->vel;
+            eff_sum += it->eff;
+        }
+
+        joint_state result;
+        result.pos = pos_sum / step;
+        result.vel = vel_sum / step;
+        result.eff = eff_sum / step;
+
+        output.push_back(result);
+    }
+}
+
 void print_list(list<joint_state> l, ofstream& pos_out, ofstream& vel_out,
         ofstream& eff_out) {
     list<joint_state>::const_iterator it = l.begin();
@@ -138,7 +179,7 @@ void print_list(list<joint_state> l, ofstream& pos_out, ofstream& vel_out,
 
 int main(int argc, char** argv) {
     // Initializing the ros node
-    ros::init(argc, argv, "raw_data_recorder");
+    ros::init(argc, argv, "temporal_data_recorder");
     ros::NodeHandle n;
 
     // Creating the subscriber
@@ -168,14 +209,24 @@ int main(int argc, char** argv) {
     vel_out.open((dir + vel_file).c_str());
     eff_out.open((dir + eff_file).c_str());
 
-    print_list(joint_1, pos_out, vel_out, eff_out);
-    print_list(joint_2, pos_out, vel_out, eff_out);
-    print_list(joint_3, pos_out, vel_out, eff_out);
-    print_list(joint_4, pos_out, vel_out, eff_out);
-    print_list(joint_5, pos_out, vel_out, eff_out);
-    print_list(joint_6, pos_out, vel_out, eff_out);
-    print_list(finger_1, pos_out, vel_out, eff_out);
-    print_list(finger_2, pos_out, vel_out, eff_out);
+    // Put into temporal bins
+    split(joint_1, joint_1_temp);
+    split(joint_2, joint_2_temp);
+    split(joint_3, joint_3_temp);
+    split(joint_4, joint_4_temp);
+    split(joint_5, joint_5_temp);
+    split(joint_6, joint_6_temp);
+    split(finger_1, finger_1_temp);
+    split(finger_2, finger_2_temp);
+
+    print_list(joint_1_temp, pos_out, vel_out, eff_out);
+    print_list(joint_2_temp, pos_out, vel_out, eff_out);
+    print_list(joint_3_temp, pos_out, vel_out, eff_out);
+    print_list(joint_4_temp, pos_out, vel_out, eff_out);
+    print_list(joint_5_temp, pos_out, vel_out, eff_out);
+    print_list(joint_6_temp, pos_out, vel_out, eff_out);
+    print_list(finger_1_temp, pos_out, vel_out, eff_out);
+    print_list(finger_2_temp, pos_out, vel_out, eff_out);
 
     pos_out.close();
     vel_out.close();

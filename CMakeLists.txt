@@ -126,9 +126,11 @@ include_directories(
 ## Declare a C++ executable
 add_executable(data_recorder src/data_recorder.cpp)
 add_executable(raw_data_recorder src/raw_data_recorder.cpp)
+add_executable(temporal_data_recorder src/temporal_data_recorder.cpp)
 
 target_link_libraries(data_recorder ${catkin_LIBRARIES})
 target_link_libraries(raw_data_recorder ${catkin_LIBRARIES})
+target_link_libraries(temporal_data_recorder ${catkin_LIBRARIES})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
