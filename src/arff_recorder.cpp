@@ -186,7 +186,7 @@ void print_list(list<joint_state> l, ofstream& pos_out, ofstream& vel_out,
 
 int main(int argc, char** argv) {
     // Initializing the ros node
-    ros::init(argc, argv, "temporal_data_recorder");
+    ros::init(argc, argv, "arff_recorder");
     ros::NodeHandle n;
 
     // Creating the subscriber
