@@ -11,6 +11,7 @@
 using std::string;
 using std::cin;
 using std::cout;
+using std::endl;
 using std::ofstream;
 using std::vector;
 using std::list;
@@ -23,6 +24,8 @@ struct joint_state {
     double pos;
     double eff;
 };
+
+typedef list<joint_state>::const_iterator list_it;
 
 // The topic the arm joints publish to
 const string ARM_TOPIC = "/joint_states";
@@ -159,29 +162,79 @@ void split(list<joint_state> raw_data, list<joint_state> output) {
     }
 }
 
-/**
- * Prints a list of joint_states to the specified ofstreams
- */
-void print_list(list<joint_state> l, ofstream& pos_out, ofstream& vel_out,
-        ofstream& eff_out) {
-    list<joint_state>::const_iterator it = l.begin();
+void print_list(ofstream& os) {
+    list_it j1 = joint_1_temp.begin();
+    list_it j2 = joint_2_temp.begin();
+    list_it j3 = joint_3_temp.begin();
+    list_it j4 = joint_4_temp.begin();
+    list_it j5 = joint_5_temp.begin();
+    list_it j6 = joint_6_temp.begin();
+    list_it f1 = finger_1_temp.begin();
+    list_it f2 = finger_2_temp.begin();
 
-    if (it != l.end()) {
-        pos_out << it->pos;
-        vel_out << it->vel;
-        eff_out << it->eff;
-        it++;
+    os << j1->pos << ", " << j1->vel << ", " << j1->eff;
+    os << ", " << j2->pos << ", " << j2->vel << ", " << j2->eff;
+    os << ", " << j3->pos << ", " << j3->vel << ", " << j3->eff;
+    os << ", " << j4->pos << ", " << j4->vel << ", " << j4->eff;
+    os << ", " << j5->pos << ", " << j5->vel << ", " << j5->eff;
+    os << ", " << j6->pos << ", " << j6->vel << ", " << j6->eff;
+    os << ", " << f1->pos << ", " << f1->vel << ", " << f1->eff;
+    os << ", " << f2->pos << ", " << f2->vel << ", " << f2->eff;
+    j1++;
+    j2++;
+    j3++;
+    j4++;
+    j5++;
+    j6++;
+    f1++;
+    f2++;
+
+    for (int i = 0; i < 9; i++) {
+        os << ", " << j1->pos << ", " << j1->vel << ", " << j1->eff;
+        os << ", " << j2->pos << ", " << j2->vel << ", " << j2->eff;
+        os << ", " << j3->pos << ", " << j3->vel << ", " << j3->eff;
+        os << ", " << j4->pos << ", " << j4->vel << ", " << j4->eff;
+        os << ", " << j5->pos << ", " << j5->vel << ", " << j5->eff;
+        os << ", " << j6->pos << ", " << j6->vel << ", " << j6->eff;
+        os << ", " << f1->pos << ", " << f1->vel << ", " << f1->eff;
+        os << ", " << f2->pos << ", " << f2->vel << ", " << f2->eff;
+        j1++;
+        j2++;
+        j3++;
+        j4++;
+        j5++;
+        j6++;
+        f1++;
+        f2++;
+    }
+    
+    os << endl;
+}
+
+void print_attr(ofstream& os, int bin_num, int joint_num, 
+        string joint, string label) {
+    os << "@attribute \'bin" << bin_num << "-" << joint << joint_num
+       << "-" << label << "\' numeric" << endl;
+}
+
+void print_header(ofstream& os) {
+    os << "@relation actions" << endl;
+
+    for (int bin = 1; bin <= 10; bin++) {
+        for (int joint = 1; joint <= 6; joint++) {
+            print_attr(os, bin, joint, "joint", "pos");
+            print_attr(os, bin, joint, "joint", "vel");
+            print_attr(os, bin, joint, "joint", "eff");
+        }
+
+        for (int finger = 1; finger <= 2; finger++) {
+            print_attr(os, bin, finger, "finger", "pos");
+            print_attr(os, bin, finger, "finger", "vel");
+            print_attr(os, bin, finger, "finger", "eff");
+        }
     }
 
-    for (; it != l.end(); it++) {
-        pos_out << ", " << it->pos;
-        vel_out << ", " << it->vel;
-        eff_out << ", " << it->eff;
-    }
-
-    pos_out << "\n";
-    vel_out << "\n";
-    eff_out << "\n";
+    os << "@data" << endl;
 }
 
 int main(int argc, char** argv) {
@@ -193,10 +246,7 @@ int main(int argc, char** argv) {
     ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
 
     // Setting the filenames
-    string dir = "";
-    string pos_file = "positions.txt";
-    string vel_file = "velocities.txt";
-    string eff_file = "efforts.txt";
+    string file = "actions.arff";
 
     // Waiting to record
     string start;
@@ -209,12 +259,8 @@ int main(int argc, char** argv) {
     }
 
     // Dumping data
-    ofstream pos_out;
-    ofstream vel_out;
-    ofstream eff_out;
-    pos_out.open((dir + pos_file).c_str());
-    vel_out.open((dir + vel_file).c_str());
-    eff_out.open((dir + eff_file).c_str());
+    ofstream os;
+    os.open(file.c_str());
 
     // Put into temporal bins
     split(joint_1, joint_1_temp);
@@ -226,18 +272,13 @@ int main(int argc, char** argv) {
     split(finger_1, finger_1_temp);
     split(finger_2, finger_2_temp);
 
-    print_list(joint_1_temp, pos_out, vel_out, eff_out);
-    print_list(joint_2_temp, pos_out, vel_out, eff_out);
-    print_list(joint_3_temp, pos_out, vel_out, eff_out);
-    print_list(joint_4_temp, pos_out, vel_out, eff_out);
-    print_list(joint_5_temp, pos_out, vel_out, eff_out);
-    print_list(joint_6_temp, pos_out, vel_out, eff_out);
-    print_list(finger_1_temp, pos_out, vel_out, eff_out);
-    print_list(finger_2_temp, pos_out, vel_out, eff_out);
+    // Printing the arff header
+    print_header(os);
 
-    pos_out.close();
-    vel_out.close();
-    eff_out.close();
+    // Printing the lists
+    print_list(os);
+
+    os.close();
 
     return 0;
 }
