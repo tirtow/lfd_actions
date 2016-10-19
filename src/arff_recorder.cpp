@@ -162,7 +162,7 @@ void split(list<joint_state>& raw_data, list<joint_state>& output) {
     }
 }
 
-void print_list(ofstream& os) {
+void print_list(ofstream& os, string classification) {
     list_it j1 = joint_1_temp.begin();
     list_it j2 = joint_2_temp.begin();
     list_it j3 = joint_3_temp.begin();
@@ -172,32 +172,16 @@ void print_list(ofstream& os) {
     list_it f1 = finger_1_temp.begin();
     list_it f2 = finger_2_temp.begin();
 
-    os << j1->pos << ", " << j1->vel << ", " << j1->eff;
-    os << ", " << j2->pos << ", " << j2->vel << ", " << j2->eff;
-    os << ", " << j3->pos << ", " << j3->vel << ", " << j3->eff;
-    os << ", " << j4->pos << ", " << j4->vel << ", " << j4->eff;
-    os << ", " << j5->pos << ", " << j5->vel << ", " << j5->eff;
-    os << ", " << j6->pos << ", " << j6->vel << ", " << j6->eff;
-    os << ", " << f1->pos << ", " << f1->vel << ", " << f1->eff;
-    os << ", " << f2->pos << ", " << f2->vel << ", " << f2->eff;
-    j1++;
-    j2++;
-    j3++;
-    j4++;
-    j5++;
-    j6++;
-    f1++;
-    f2++;
-
-    for (int i = 0; i < 9; i++) {
-        os << ", " << j1->pos << ", " << j1->vel << ", " << j1->eff;
-        os << ", " << j2->pos << ", " << j2->vel << ", " << j2->eff;
-        os << ", " << j3->pos << ", " << j3->vel << ", " << j3->eff;
-        os << ", " << j4->pos << ", " << j4->vel << ", " << j4->eff;
-        os << ", " << j5->pos << ", " << j5->vel << ", " << j5->eff;
-        os << ", " << j6->pos << ", " << j6->vel << ", " << j6->eff;
-        os << ", " << f1->pos << ", " << f1->vel << ", " << f1->eff;
-        os << ", " << f2->pos << ", " << f2->vel << ", " << f2->eff;
+    // Printing the temporal bins
+    for (int i = 0; i < 10; i++) {
+        os << j1->pos << ", " << j1->vel << ", " << j1->eff << ", ";
+        os << j2->pos << ", " << j2->vel << ", " << j2->eff << ", ";
+        os << j3->pos << ", " << j3->vel << ", " << j3->eff << ", ";
+        os << j4->pos << ", " << j4->vel << ", " << j4->eff << ", ";
+        os << j5->pos << ", " << j5->vel << ", " << j5->eff << ", ";
+        os << j6->pos << ", " << j6->vel << ", " << j6->eff << ", ";
+        os << f1->pos << ", " << f1->vel << ", " << f1->eff << ", ";
+        os << f2->pos << ", " << f2->vel << ", " << f2->eff << ", ";
         j1++;
         j2++;
         j3++;
@@ -207,8 +191,9 @@ void print_list(ofstream& os) {
         f1++;
         f2++;
     }
-    
-    os << endl;
+
+    // Printing the classification
+    os << "\'" << classification << "\'" << endl;
 }
 
 void print_attr(ofstream& os, int bin_num, int joint_num, 
@@ -234,7 +219,8 @@ void print_header(ofstream& os) {
         }
     }
 
-    os << "@data" << endl;
+    os << "@attribute \'Class\' { \'lift\', \'sweep\' }" << endl
+       << "@data" << endl;
 }
 
 int main(int argc, char** argv) {
@@ -249,9 +235,9 @@ int main(int argc, char** argv) {
     string file = "actions.arff";
 
     // Waiting to record
-    string start;
-    cout << "Enter 1 to start: ";
-    cin >> start;
+    string classification;
+    cout << "Enter classification: ";
+    cin >> classification;
     
     // Recording the data
     while (ros::ok() && getch() != 'q') {
@@ -276,7 +262,7 @@ int main(int argc, char** argv) {
     print_header(os);
 
     // Printing the lists
-    print_list(os);
+    print_list(os, classification);
 
     os.close();
 
