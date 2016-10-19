@@ -223,6 +223,11 @@ void print_header(ofstream& os) {
        << "@data" << endl;
 }
 
+bool file_exists(const string& name) {
+    std::ifstream f(name.c_str());
+    return f.good();
+}
+
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "arff_recorder");
@@ -244,10 +249,6 @@ int main(int argc, char** argv) {
         ros::spinOnce();
     }
 
-    // Dumping data
-    ofstream os;
-    os.open(file.c_str());
-
     // Put into temporal bins
     split(joint_1, joint_1_temp);
     split(joint_2, joint_2_temp);
@@ -258,8 +259,17 @@ int main(int argc, char** argv) {
     split(finger_1, finger_1_temp);
     split(finger_2, finger_2_temp);
 
-    // Printing the arff header
-    print_header(os);
+    // Dumping data
+    ofstream os;
+
+    if (file_exists(file)) {
+        os.open(file.c_str(), std::ios_base::app);
+    } else {
+        os.open(file.c_str());
+        
+        // Printing the arff header
+        print_header(os);
+    }
 
     // Printing the lists
     print_list(os, classification);
