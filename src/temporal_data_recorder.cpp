@@ -124,7 +124,7 @@ void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
 /**
  * Splits the raw_data into temporal bins into the output
  */
-void split(list<joint_state> raw_data, list<joint_state> output) {
+void split(list<joint_state>& raw_data, list<joint_state>& output) {
     list<joint_state>::size_type size = raw_data.size();
     int step = std::ceil(size / 10.0);
 
