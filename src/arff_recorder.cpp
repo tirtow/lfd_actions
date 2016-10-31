@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
     ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
 
     // Setting the filenames
-    string file = "actions.arff";
+    string file = "dataset/actions.arff";
 
     bool again = true;
     bool exists = true;
@@ -283,6 +283,23 @@ int main(int argc, char** argv) {
         if (repeat != "Y" && repeat != "y") {
             again = false;
         }
+        
+        joint_1.clear();
+        joint_1_temp.clear();
+        joint_2.clear();
+        joint_2_temp.clear();
+        joint_3.clear();
+        joint_3_temp.clear();
+        joint_4.clear();
+        joint_4_temp.clear();
+        joint_5.clear();
+        joint_5_temp.clear();
+        joint_6.clear();
+        joint_6_temp.clear();
+        finger_1.clear();
+        finger_1_temp.clear();
+        finger_2.clear();
+        finger_2_temp.clear();
     }
 
     os.close();
