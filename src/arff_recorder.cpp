@@ -239,40 +239,49 @@ int main(int argc, char** argv) {
     // Setting the filenames
     string file = "actions.arff";
 
-    // Waiting to record
-    string classification;
-    cout << "Enter classification: ";
-    cin >> classification;
-    
-    // Recording the data
-    while (ros::ok() && getch() != 'q') {
-        ros::spinOnce();
-    }
-
-    // Put into temporal bins
-    split(joint_1, joint_1_temp);
-    split(joint_2, joint_2_temp);
-    split(joint_3, joint_3_temp);
-    split(joint_4, joint_4_temp);
-    split(joint_5, joint_5_temp);
-    split(joint_6, joint_6_temp);
-    split(finger_1, finger_1_temp);
-    split(finger_2, finger_2_temp);
-
-    // Dumping data
-    ofstream os;
+    bool again = true;
+    bool exists = true;
 
     if (file_exists(file)) {
         os.open(file.c_str(), std::ios_base::app);
     } else {
         os.open(file.c_str());
-        
+    
         // Printing the arff header
         print_header(os);
     }
 
-    // Printing the lists
-    print_list(os, classification);
+    while (again) {
+        // Waiting to record
+        string classification;
+        cout << "Enter classification: ";
+        cin >> classification;
+    
+        // Recording the data
+        while (ros::ok() && getch() != 'q') {
+            ros::spinOnce();
+        }
+
+        // Put into temporal bins
+        split(joint_1, joint_1_temp);
+        split(joint_2, joint_2_temp);
+        split(joint_3, joint_3_temp);
+        split(joint_4, joint_4_temp);
+        split(joint_5, joint_5_temp);
+        split(joint_6, joint_6_temp);
+        split(finger_1, finger_1_temp);
+        split(finger_2, finger_2_temp);
+
+        // Printing the lists
+        print_list(os, classification);
+
+        string repeat;
+        cout << "Again [Y/y]: ";
+        cin >> repeat;
+        if (repeat !== "Y" && repeat != "y") {
+            again = false;
+        }
+    }
 
     os.close();
 
