@@ -11,6 +11,7 @@ using std::string;
 using std::cin;
 using std::cout;
 using std::endl;
+using std::ifstream;
 using std::ofstream;
 using std::vector;
 using std::list;
@@ -46,6 +47,10 @@ list<coord> joint_5_temp;
 list<coord> joint_6_temp;
 list<coord> finger_1_temp;
 list<coord> finger_2_temp;
+
+// Data set lists
+list<list<coord> > lifts;
+list<list<coord> > sweeps;
 
 /**
  * Reads a character without blocking execution
@@ -265,10 +270,15 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "arff_recorder");
     ros::NodeHandle n;
 
+    // Getting the input dataset file
+    string dataset_name = argv[1];
+    ifstream dataset(dataset_name.c_str());
+    build_dataset(dataset);
+
     // Getting whether or not to supervise
     bool supervised = false;
-    if (argc >= 2) {
-        string super = argv[1];
+    if (argc >= 3) {
+        string super = argv[2];
         supervised = super == "supervise";
         ROS_INFO("supervise");
     }
@@ -296,7 +306,7 @@ int main(int argc, char** argv) {
         // Notifying of recording
         cout << "Recording data..." << endl
              << "Press \'q\' to stop" << endl;
-    
+
         // Recording the data
         while (ros::ok() && getch() != 'q') {
             ros::spinOnce();
@@ -309,7 +319,7 @@ int main(int argc, char** argv) {
         // Perform k-NN on recorded action
         string guess;
         // TODO perform k-NN
-        
+
         // Print out the guess for the action
         print_guess(guess);
 
