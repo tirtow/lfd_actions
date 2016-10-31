@@ -242,6 +242,8 @@ int main(int argc, char** argv) {
     bool again = true;
     bool exists = true;
 
+    ofstream os;
+
     if (file_exists(file)) {
         os.open(file.c_str(), std::ios_base::app);
     } else {
@@ -278,7 +280,7 @@ int main(int argc, char** argv) {
         string repeat;
         cout << "Again [Y/y]: ";
         cin >> repeat;
-        if (repeat !== "Y" && repeat != "y") {
+        if (repeat != "Y" && repeat != "y") {
             again = false;
         }
     }
