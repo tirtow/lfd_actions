@@ -9,6 +9,8 @@
 #include <cmath>
 #include <climits>
 #include "sensor_msgs/JointState.h"
+#include "dataset.h"
+#include "dataset.cpp"
 
 using std::string;
 using std::cin;
