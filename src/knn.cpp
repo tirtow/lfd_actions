@@ -85,17 +85,23 @@ int getch() {
  */
 void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
     vector<string> names = msg->name;
+
+    // Checking that received the appropriate number of joints
     if (names.size() == 8) {
+        // Getting the positions, velocities, and efforts
         vector<double> positions = msg->position;
         vector<double> velocities = msg->velocity;
         vector<double> efforts = msg->effort;
 
+        // Looping through each joint
         for (int i = 0; i < names.size(); i++) {
+            // Creating a coord for the joint
             coord state;
             state.pos = positions[i];
             state.vel = velocities[i];
             state.vel = efforts[i];
 
+            // Pushing the coord to the appropriate list
             switch (i) {
             case 0:
                 joint_1.push_back(state);
@@ -133,21 +139,25 @@ void split(list<coord>& raw_data, list<coord>& output) {
     list<coord>::size_type size = raw_data.size();
     int step = std::ceil(size / 10.0);
 
+    // Splitting the list into 10 sets and looping through each set
     for (list<coord>::size_type start = 0; start < raw_data.size(); start += step) {
         double pos_sum = 0;
         double vel_sum = 0;
         double eff_sum = 0;
 
+        // Moving it to the beginning of the set
         list<coord>::const_iterator it = raw_data.begin();
         for (int i = 0; i < start; i++) {
             it++;
         }
 
+        // Moving stop to the end of the set
         list<coord>::const_iterator stop = it;
         for (int i = 0; i < step; i++) {
             stop++;
         }
 
+        // Summing the positions, velocities, and efforts for the set
         while (it != stop && it != raw_data.end()) {
             pos_sum += it->pos;
             vel_sum += it->vel;
@@ -155,16 +165,20 @@ void split(list<coord>& raw_data, list<coord>& output) {
             it++;
         }
 
+        // Creating the coord for the temporal bin and pushing to the result list
         coord result;
         result.pos = pos_sum / step;
         result.vel = vel_sum / step;
         result.eff = eff_sum / step;
-
         output.push_back(result);
     }
 }
 
-void print_list(ofstream& os, string classification) {
+/**
+ * Writes the temporal bins for each joint and the classification for the action
+ * Writes j1.vel j1.pos j1.eff j2.vel... for each temporal bin
+ */
+void write_list(ofstream& os, string classification) {
     list_it j1 = joint_1_temp.begin();
     list_it j2 = joint_2_temp.begin();
     list_it j3 = joint_3_temp.begin();
@@ -198,11 +212,18 @@ void print_list(ofstream& os, string classification) {
     os << classification << endl;
 }
 
+/**
+ * Checks if the passed filename is the name of a file that exists
+ * Returns true if the file exists, false otherwise
+ */
 bool file_exists(const string& name) {
     std::ifstream f(name.c_str());
     return f.good();
 }
 
+/**
+ * Clears the lists for the joints and the temporal bins for each joint
+ */
 void clear_lists() {
     joint_1.clear();
     joint_1_temp.clear();
@@ -222,6 +243,9 @@ void clear_lists() {
     finger_2_temp.clear();
 }
 
+/**
+ * Calls split for each of the joints to create the temporal bins
+ */
 void split_lists() {
     split(joint_1, joint_1_temp);
     split(joint_2, joint_2_temp);
@@ -233,6 +257,10 @@ void split_lists() {
     split(finger_2, finger_2_temp);
 }
 
+/**
+ * Prompts the user to record another actions
+ * Returns true if going to record another action, false otherwise
+ */
 bool repeat() {
     string repeat;
     cout << "Again [Y/y]: ";
@@ -244,10 +272,17 @@ bool repeat() {
     return true;;
 }
 
+/**
+ * Outputs the guess from the robot
+ */
 void print_guess(const string& guess) {
-    cout << "Action guess: " << guess << endl;
+    ROS_INFO("Action guess: %s", guess.c_str());
 }
 
+/**
+ * Prompts the user to correct the robot if the robot guessed wrong
+ * Returns the appropriate label for the action that was performed
+ */
 string confirm_guess(const string& guess) {
     string confirm;
     string label = guess;
@@ -273,7 +308,7 @@ int main(int argc, char** argv) {
     // Getting the input dataset file
     string dataset_name = argv[1];
     ifstream dataset(dataset_name.c_str());
-    build_dataset(dataset);
+    //build_dataset(dataset);
 
     // Getting whether or not to supervise
     bool supervised = false;
@@ -329,7 +364,7 @@ int main(int argc, char** argv) {
             string label = confirm_guess(guess);
 
             // Printing the lists
-            print_list(os, label);
+            write_list(os, label);
         }
 
         // Clearing the lists
