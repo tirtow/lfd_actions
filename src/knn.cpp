@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <map>
 #include <termios.h>
 #include "sensor_msgs/JointState.h"
 
@@ -11,10 +12,12 @@ using std::string;
 using std::cin;
 using std::cout;
 using std::endl;
+using std::istream;
 using std::ifstream;
 using std::ofstream;
 using std::vector;
 using std::list;
+using std::map;
 
 // struct for the different values obtained from the joints
 struct coord {
@@ -29,6 +32,7 @@ typedef list<coord>::const_iterator list_it;
 const string ARM_TOPIC = "/joint_states";
 
 // lists of joint_states
+map<string, list<coord> > joints;
 list<coord> joint_1;
 list<coord> joint_2;
 list<coord> joint_3;
@@ -78,6 +82,28 @@ int getch() {
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
     return c;
+}
+
+void arm_cb2(const sensor_msgs::JointState::ConstPtr& msg) {
+    vector<string> names = msg->name;
+
+    if (names.size() == 8) {
+        vector<double> positions = msg->position;
+        vector<double> velocities = msg->velocity;
+        vector<double> efforts = msg->effort;
+        
+        int i = 0;
+        for (vector<string>::const_iterator it = names.begin();
+                it != names.end(); it++) {
+            coord state;
+            state.pos = positions[i];
+            state.vel = velocities[i];
+            state.eff = efforts[i];
+    
+            joints[*it].push_back(state);
+            i++;
+        }
+    }
 }
 
 /**
@@ -173,6 +199,16 @@ void split(list<coord>& raw_data, list<coord>& output) {
         output.push_back(result);
     }
 }
+
+/*
+void write_list2(ofstream& os, string classification) {
+    typedef map<string, list<coord> >::const_iterator map_it;
+
+    for (map_it it = joints.begin(); it != joints.end(); it++) {
+        list<coord> vals = it->second();
+    }
+}
+*/
 
 /**
  * Writes the temporal bins for each joint and the classification for the action
@@ -300,6 +336,76 @@ string confirm_guess(const string& guess) {
     return label;
 }
 
+bool is_num(char c) {
+    return isdigit(c) || c == '.';
+}
+
+string split_line(const string& line, vector<float>& values) {
+    string::const_iterator begin = line.begin();
+    while (is_num(*begin)) {
+        string::const_iterator end = begin;
+        while (is_num(*end)) {
+            end++;
+        }
+
+        string val(begin, end);
+        values.push_back(atof(val.c_str()));
+        begin = end + 1;
+    }
+
+    string classification(begin, line.end());
+    return classification;
+}
+
+list<coord> build_coord_list(const vector<float>& values) {
+    list<coord> coords;
+
+    for (int i = 0; i < values.size(); i += 3) {
+        coord c;
+        c.vel = values[i];
+        c.pos = values[i + 1];
+        c.eff = values[i + 2];
+        coords.push_back(c);
+    }
+
+    return coords;
+}
+
+void build_dataset(ifstream& is) {
+    while (is) {
+        string line;
+        getline(is, line);
+
+        vector<float> values;
+        string classification = split_line(line, values);
+        list<coord> coords = build_coord_list(values);
+
+        if (classification == "lift") {
+            lifts.push_back(coords);
+        } else if (classification == "sweep") {
+            sweeps.push_back(coords);
+        }
+    }
+}
+
+void print_list(const string& classification, const list<coord>& l) {
+    for (list_it it = l.begin(); it != l.end(); it++) {
+        cout << it->vel << " " << it->pos << " " << it->eff << " ";
+    }
+
+    cout << classification << endl;
+}
+
+void print_dataset() {
+    for (list<list<coord> >::const_iterator it = lifts.begin(); it != lifts.end(); it++) {
+        print_list("lift", *it);
+    }
+
+    for (list<list<coord> >::const_iterator it = sweeps.begin(); it != sweeps.end(); it++) {
+        print_list("sweep", *it);
+    }
+}
+
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "arff_recorder");
@@ -308,7 +414,7 @@ int main(int argc, char** argv) {
     // Getting the input dataset file
     string dataset_name = argv[1];
     ifstream dataset(dataset_name.c_str());
-    //build_dataset(dataset);
+    build_dataset(dataset);
 
     // Getting whether or not to supervise
     bool supervised = false;
@@ -332,7 +438,7 @@ int main(int argc, char** argv) {
         os.open(file.c_str());
     }
 
-    bool again = true;
+    bool again = false;
     while (again) {
         // Waiting to record
         cout << "Press [Enter] to start";
