@@ -341,58 +341,6 @@ string confirm_guess(const string& guess) {
     return label;
 }
 
-bool is_num(char c) {
-    return isdigit(c) || c == '.';
-}
-
-string split_line(const string& line, vector<float>& values) {
-    string::const_iterator begin = line.begin();
-    while (is_num(*begin)) {
-        string::const_iterator end = begin;
-        while (is_num(*end)) {
-            end++;
-        }
-
-        string val(begin, end);
-        values.push_back(atof(val.c_str()));
-        begin = end + 1;
-    }
-
-    string classification(begin, line.end());
-    return classification;
-}
-
-list<coord> build_coord_list(const vector<float>& values) {
-    list<coord> coords;
-
-    for (int i = 0; i < values.size(); i += 3) {
-        coord c;
-        c.vel = values[i];
-        c.pos = values[i + 1];
-        c.eff = values[i + 2];
-        coords.push_back(c);
-    }
-
-    return coords;
-}
-
-void build_dataset(ifstream& is) {
-    while (is) {
-        string line;
-        getline(is, line);
-
-        vector<float> values;
-        string classification = split_line(line, values);
-        list<coord> coords = build_coord_list(values);
-
-        if (classification == "lift") {
-            lifts.push_back(coords);
-        } else if (classification == "sweep") {
-            sweeps.push_back(coords);
-        }
-    }
-}
-
 void print_list(const string& classification, const list<coord>& l) {
     for (list_it it = l.begin(); it != l.end(); it++) {
         cout << it->vel << " " << it->pos << " " << it->eff << " ";
@@ -434,8 +382,8 @@ int main(int argc, char** argv) {
 
     // Getting the input dataset file
     string dataset_name = argv[1];
-    ifstream dataset(dataset_name.c_str());
-    build_dataset(dataset);
+    ifstream data_file(dataset_name.c_str());
+    Dataset data(data_file);
 
     // Getting whether or not to supervise
     bool supervised = false;
