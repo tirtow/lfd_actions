@@ -341,32 +341,6 @@ string confirm_guess(const string& guess) {
     return label;
 }
 
-void print_list(const string& classification, const list<coord>& l) {
-    for (list_it it = l.begin(); it != l.end(); it++) {
-        cout << it->vel << " " << it->pos << " " << it->eff << " ";
-    }
-
-    cout << classification << endl;
-}
-
-void print_dataset() {
-    for (list<list<coord> >::const_iterator it = lifts.begin(); it != lifts.end(); it++) {
-        print_list("lift", *it);
-    }
-
-    for (list<list<coord> >::const_iterator it = sweeps.begin(); it != sweeps.end(); it++) {
-        print_list("sweep", *it);
-    }
-}
-
-double get_dist(const coord& data, const coord& action) {
-    double delta_vel = pow(action.vel - data.vel, 2);
-    double delta_pos = pow(action.pos - data.pos, 2);
-    double delta_eff = pow(action.eff - data.eff, 2);
-
-    return sqrt(delta_vel + delta_pos + delta_eff);
-}
-
 string guess_classification(const list<coord>& action) {
     double lift_min_dist = std::numeric_limits<double>::max();
     for (data_it it = lifts.begin(); it != lifts.end(); it++) {

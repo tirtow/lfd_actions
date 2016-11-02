@@ -14,13 +14,6 @@
  */
 class Dataset {
     public:
-        // Struct for the data points for each temporal bin
-        struct data_point {
-            double vel;
-            double pos;
-            double eff;
-        };
-
         /**
          * Builds a Dataset given an input stream to a file
          * The file should have the data for each action on a line with each
@@ -29,7 +22,24 @@ class Dataset {
          */
         Dataset(std::ifstream&);
 
+        /**
+         * Prints out each actions data_points and classification to the
+         * standard output stream
+         */
+        void print_dataset();
+
     private:
+        // Struct for the data points for each temporal bin
+        struct data_point {
+            double vel;
+            double pos;
+            double eff;
+        };
+
+        // Defining iterators for the internal values
+        typedef std::list<data_point>::const_iterator data_list_cit;
+        typedef std::list<std::list<data_point> >::const_iterator data_group_cit;
+
         // The lists of each action based on classification
         std::list<std::list<data_point> > lifts;
         std::list<std::list<data_point> > sweeps;
@@ -56,6 +66,18 @@ class Dataset {
          * the classication for the data
          */
         std::string split_line(const std::string&, std::vector<float>&);
+
+        /**
+         * Gets the distance between two data_points by extending the
+         * Pythagorean theorum to three points
+         * Returns the distance between the two points
+         */
+        double get_dist(const data_point&, const data_point&);
+
+        /**
+         * Prints out one of the action's data points and it's classification
+         */
+        void print_list(const std::string&, const std::list<data_point>&);
 
 };
 

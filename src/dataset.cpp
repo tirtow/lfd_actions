@@ -2,6 +2,8 @@
 #include <cmath>
 
 using std::ifstream;
+using std::cout;
+using std::endl;
 using std::list;
 using std::vector;
 using std::string;
@@ -49,6 +51,17 @@ string Dataset::split_line(const string& line, vector<float>& values) {
     return classification;
 }
 
+void Dataset::print_list(const string& classification,
+        const list<Dataset::data_point>& data) {
+    // Looping through list and printing each data point
+    for (data_list_cit it = data.begin(); it != data.end(); it++) {
+        cout << it->vel << " " << it->pos << " " << it->eff << " ";
+    }
+
+    // Printing the classification
+    cout << classification << endl;
+}
+
 Dataset::Dataset(ifstream& is) {
     // Looping while not at end of file
     while (is) {
@@ -69,5 +82,26 @@ Dataset::Dataset(ifstream& is) {
         } else if (classification == "sweep") {
             sweeps.push_back(data_points);
         }
+    }
+}
+
+double Dataset::get_dist(const Dataset::data_point& data,
+        const Dataset::data_point& action) {
+    double delta_vel = pow(action.vel - data.vel, 2);
+    double delta_pos = pow(action.pos - data.pos, 2);
+    double delta_eff = pow(action.eff - data.eff, 2);
+
+    return sqrt(delta_vel + delta_pos + delta_eff);
+}
+
+void Dataset::print_dataset() {
+    // Printing all the data for lifts
+    for (data_group_cit it = lifts.begin(); it != lifts.end(); it++) {
+        print_list("lift", *it);
+    }
+
+    // Printing all the data for sweeps
+    for (data_group_cit it = sweeps.begin(); it != sweeps.end(); it++) {
+        print_list("sweep", *it);
     }
 }
