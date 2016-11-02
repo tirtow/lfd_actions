@@ -341,14 +341,6 @@ string confirm_guess(const string& guess) {
     return label;
 }
 
-string guess_classification(const list<coord>& action) {
-    double lift_min_dist = std::numeric_limits<double>::max();
-    for (data_it it = lifts.begin(); it != lifts.end(); it++) {
-        for (list_it l_it = it->begin(); l_it != it->end(); l_it++) {
-        }
-    }
-}
-
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "arff_recorder");

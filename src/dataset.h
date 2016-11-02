@@ -82,6 +82,7 @@ class Dataset {
         /**
          * Guesses the classification for the given action using k-NN to
          * get the nearest neighbor for each temporal bin
+         * Returns the guessed classifaction
          */
         std::string guess_classification(const std::list<data_point>&);
 
