@@ -7,6 +7,7 @@ using std::endl;
 using std::list;
 using std::vector;
 using std::string;
+using std::map;
 
 bool Dataset::is_num(char c) {
     return isdigit(c) || c == '.';
@@ -85,6 +86,22 @@ Dataset::Dataset(ifstream& is) {
     }
 }
 
+string Dataset::guess_classification(const action_list& action) {
+    int bin = 1;
+    map<string, int> counts;
+    for (data_list_cit action_it = action.begin();
+            action_it != action.end(); action_it++) {
+        for (int joint = 1; joint <= 8; joint++) {
+            action_list lift_bins = get_bin(joint, bin, lifts);
+            action_list sweep_bins = get_bin(joint, bin, sweeps);
+            string classification = bin_classification(action, lift_bins, sweep_bins);
+            counts[classification]++;
+        }
+
+        bin++;
+    }
+}
+
 double Dataset::get_dist(const Dataset::data_point& data,
         const Dataset::data_point& action) {
     double delta_vel = pow(action.vel - data.vel, 2);
@@ -92,6 +109,48 @@ double Dataset::get_dist(const Dataset::data_point& data,
     double delta_eff = pow(action.eff - data.eff, 2);
 
     return sqrt(delta_vel + delta_pos + delta_eff);
+}
+
+string Dataset::bin_classification(const data_point& p, const action_list& lifts, const action_list& sweeps) {
+    return "";
+}
+
+Dataset::action_list Dataset::get_bin(int joint, int bin, const action_set& set) {
+    action_list result;
+    for (data_group_cit set_it = set.begin(); set_it != set.end(); set_it++) {
+        action_list current_list = *set_it;
+        data_list_cit list_it = current_list.begin();
+
+        // Moving list_it down to the appropriate bin
+        for (int i = 1; i < bin * 24; i++) {
+            list_it++;
+        }
+
+        // Moving list_it down the appropriate joint in the bin
+        for (int i = 1; i < joint * 3; i++) {
+            list_it++;
+        }
+
+        // Pushing back the data_point
+        result.push_back(*list_it);
+    }
+
+    return result;
+}
+
+string get_max_in_map(const map<string, int>& counts) {
+    int max = 0;
+    string max_key;
+
+    for (map<string, int>::const_iterator it = counts.begin();
+            it != counts.end(); it++) {
+        if (it->second > max) {
+            max = it->second;
+            max_key = it->first;
+        }
+    }
+
+    return max_key;
 }
 
 void Dataset::print_dataset() {
