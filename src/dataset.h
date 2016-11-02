@@ -86,7 +86,8 @@ class Dataset {
          * data_points from actions in the dataset from the same temporal bin
          * Returns the name of the classification based on the one temporal bin
          */
-        std::string bin_classification(const data_point&, const list<data_point>&);
+        std::string bin_classification(const data_point&,
+                const list<data_point>&, const list<data_point>&);
 
         /**
          * Prints out one of the action's data points and it's classification
