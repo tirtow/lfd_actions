@@ -89,17 +89,19 @@ Dataset::Dataset(ifstream& is) {
 string Dataset::guess_classification(const action_list& action) {
     int bin = 1;
     map<string, int> counts;
-    for (data_list_cit action_it = action.begin();
-            action_it != action.end(); action_it++) {
+    data_list_cit action_it = action.begin();
+    while (action_it != action.end()) {
         for (int joint = 1; joint <= 8; joint++) {
             action_list lift_bins = get_bin(joint, bin, lifts);
             action_list sweep_bins = get_bin(joint, bin, sweeps);
-            string classification = bin_classification(action, lift_bins, sweep_bins);
+            string classification = bin_classification(*action_it++, lift_bins, sweep_bins);
             counts[classification]++;
         }
 
         bin++;
     }
+
+    return get_max_in_map(counts);
 }
 
 double Dataset::get_dist(const Dataset::data_point& data,
@@ -118,12 +120,12 @@ Dataset::action_list Dataset::get_bin(int joint, int bin, const action_set& set)
         data_list_cit list_it = current_list.begin();
 
         // Moving list_it down to the appropriate bin
-        for (int i = 1; i < bin * 24; i++) {
+        for (int i = 1; i < bin * 8; i++) {
             list_it++;
         }
 
         // Moving list_it down the appropriate joint in the bin
-        for (int i = 1; i < joint * 3; i++) {
+        for (int i = 1; i < joint; i++) {
             list_it++;
         }
 
@@ -134,7 +136,7 @@ Dataset::action_list Dataset::get_bin(int joint, int bin, const action_set& set)
     return result;
 }
 
-string get_max_in_map(const map<string, int>& counts) {
+string Dataset::get_max_in_map(const map<string, int>& counts) {
     int max = 0;
     string max_key;
 
@@ -149,9 +151,8 @@ string get_max_in_map(const map<string, int>& counts) {
     return max_key;
 }
 
-=======
-string bin_classification(const data_point& point, const list<data_point>& liftPoints
-   , const list<data_points>& sweepPoints){
+string Dataset::bin_classification(const data_point& point, const list<data_point>& liftPoints
+   , const list<data_point>& sweepPoints){
 
    double liftCmp = 99999999999999.0;
    double sweepCmp = 99999999999999.0;
@@ -171,7 +172,7 @@ string bin_classification(const data_point& point, const list<data_point>& liftP
    
        if( sweepCmp > tempSweepCmp )
        {
-         sweepCmp = tempLiftCmp;
+         sweepCmp = tempSweepCmp;
        }
 
     }
@@ -189,7 +190,7 @@ string bin_classification(const data_point& point, const list<data_point>& liftP
        return "lift";
     }
 }
->>>>>>> dc1f20135147bbe6e89a698938928d78b0be4fc9
+
 void Dataset::print_dataset() {
     // Printing all the data for lifts
     for (data_group_cit it = lifts.begin(); it != lifts.end(); it++) {

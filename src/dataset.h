@@ -44,17 +44,16 @@ class Dataset {
         std::string guess_classification(const std::list<data_point>&);
 
     private:
-        // List types used in Datasets
         typedef std::list<data_point> action_list;
-        typedef std::list<std::list<data_point> > action_set;
+        typedef std::list<action_list> action_set;
 
         // Defining iterators for the internal values
-        typedef action_list::const_iterator data_list_cit;
-        typedef action_set::const_iterator data_group_cit;
+        typedef std::list<data_point>::const_iterator data_list_cit;
+        typedef std::list<std::list<data_point> >::const_iterator data_group_cit;
 
         // The lists of each action based on classification
-        action_set lifts;
-        action_set sweeps;
+        std::list<std::list<data_point> > lifts;
+        std::list<std::list<data_point> > sweeps;
 
         /**
          * Gets whether or not character is part of a number
@@ -94,16 +93,8 @@ class Dataset {
         std::string bin_classification(const data_point&,
                 const std::list<data_point>&, const std::list<data_point>&);
 
-        /**
-         * Gets a list of the ith temporal bin from each list of bins
-         * Returns a list of data_points
-         */
         action_list get_bin(int, int, const action_set&);
 
-        /**
-         * Gets the string with the largest associated value in a map
-         * Returns the key to the greatest value
-         */
         std::string get_max_in_map(const std::map<std::string, int>&);
 
         /**
