@@ -111,10 +111,6 @@ double Dataset::get_dist(const Dataset::data_point& data,
     return sqrt(delta_vel + delta_pos + delta_eff);
 }
 
-string Dataset::bin_classification(const data_point& p, const action_list& lifts, const action_list& sweeps) {
-    return "";
-}
-
 Dataset::action_list Dataset::get_bin(int joint, int bin, const action_set& set) {
     action_list result;
     for (data_group_cit set_it = set.begin(); set_it != set.end(); set_it++) {
@@ -153,6 +149,47 @@ string get_max_in_map(const map<string, int>& counts) {
     return max_key;
 }
 
+=======
+string bin_classification(const data_point& point, const list<data_point>& liftPoints
+   , const list<data_points>& sweepPoints){
+
+   double liftCmp = 99999999999999.0;
+   double sweepCmp = 99999999999999.0;
+
+    for(data_list_cit it = liftPoints.begin(); it != liftPoints.end(); it++) {
+        double tempLiftCmp = get_dist(point, *it);
+
+        if( liftCmp > tempLiftCmp )
+        {
+          liftCmp = tempLiftCmp;
+        }
+        
+    }
+
+    for(data_list_cit it = sweepPoints.begin(); it != sweepPoints.end(); it++) {
+       double tempSweepCmp = get_dist(point, *it);
+   
+       if( sweepCmp > tempSweepCmp )
+       {
+         sweepCmp = tempLiftCmp;
+       }
+
+    }
+
+    // Compare the values of lifts and sweeps to the data point of the unknown action
+    // return the classification of the one with the smaller value
+
+
+    if( liftCmp > sweepCmp)
+    {
+       return "sweep";
+    }
+    else
+    {
+       return "lift";
+    }
+}
+>>>>>>> dc1f20135147bbe6e89a698938928d78b0be4fc9
 void Dataset::print_dataset() {
     // Printing all the data for lifts
     for (data_group_cit it = lifts.begin(); it != lifts.end(); it++) {
