@@ -82,6 +82,13 @@ class Dataset {
         double get_dist(const data_point&, const data_point&);
 
         /**
+         * Gets the classification for the passed data_point based on the other
+         * data_points from actions in the dataset from the same temporal bin
+         * Returns the name of the classification based on the one temporal bin
+         */
+        string bin_classification(const data_point&, const list<data_point>&);
+
+        /**
          * Prints out one of the action's data points and it's classification
          */
         void print_list(const std::string&, const std::list<data_point>&);
