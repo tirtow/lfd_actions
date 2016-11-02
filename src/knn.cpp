@@ -30,36 +30,32 @@ struct coord {
     double eff;
 };
 
-typedef list<coord>::const_iterator list_it;
-typedef list<list<coord> >::const_iterator data_it;
+typedef list<Dataset::data_point>::const_iterator list_it;
+typedef list<list<Dataset::data_point> >::const_iterator data_it;
 
 // The topic the arm joints publish to
 const string ARM_TOPIC = "/joint_states";
 
 // lists of joint_states
 map<string, list<coord> > joints;
-list<coord> joint_1;
-list<coord> joint_2;
-list<coord> joint_3;
-list<coord> joint_4;
-list<coord> joint_5;
-list<coord> joint_6;
-list<coord> finger_1;
-list<coord> finger_2;
+list<Dataset::data_point> joint_1;
+list<Dataset::data_point> joint_2;
+list<Dataset::data_point> joint_3;
+list<Dataset::data_point> joint_4;
+list<Dataset::data_point> joint_5;
+list<Dataset::data_point> joint_6;
+list<Dataset::data_point> finger_1;
+list<Dataset::data_point> finger_2;
 
 // lists of temporal bins for the coord
-list<coord> joint_1_temp;
-list<coord> joint_2_temp;
-list<coord> joint_3_temp;
-list<coord> joint_4_temp;
-list<coord> joint_5_temp;
-list<coord> joint_6_temp;
-list<coord> finger_1_temp;
-list<coord> finger_2_temp;
-
-// Data set lists
-list<list<coord> > lifts;
-list<list<coord> > sweeps;
+list<Dataset::data_point> joint_1_temp;
+list<Dataset::data_point> joint_2_temp;
+list<Dataset::data_point> joint_3_temp;
+list<Dataset::data_point> joint_4_temp;
+list<Dataset::data_point> joint_5_temp;
+list<Dataset::data_point> joint_6_temp;
+list<Dataset::data_point> finger_1_temp;
+list<Dataset::data_point> finger_2_temp;
 
 /**
  * Reads a character without blocking execution
@@ -127,7 +123,7 @@ void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
         // Looping through each joint
         for (int i = 0; i < names.size(); i++) {
             // Creating a coord for the joint
-            coord state;
+            Dataset::data_point state;
             state.pos = positions[i];
             state.vel = velocities[i];
             state.vel = efforts[i];
@@ -166,24 +162,24 @@ void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
 /**
  * Splits the raw_data into temporal bins into the output
  */
-void split(list<coord>& raw_data, list<coord>& output) {
-    list<coord>::size_type size = raw_data.size();
+void split(list<Dataset::data_point>& raw_data, list<Dataset::data_point>& output) {
+    list<Dataset::data_point>::size_type size = raw_data.size();
     int step = std::ceil(size / 10.0);
 
     // Splitting the list into 10 sets and looping through each set
-    for (list<coord>::size_type start = 0; start < raw_data.size(); start += step) {
+    for (list<Dataset::data_point>::size_type start = 0; start < raw_data.size(); start += step) {
         double pos_sum = 0;
         double vel_sum = 0;
         double eff_sum = 0;
 
         // Moving it to the beginning of the set
-        list<coord>::const_iterator it = raw_data.begin();
+        list<Dataset::data_point>::const_iterator it = raw_data.begin();
         for (int i = 0; i < start; i++) {
             it++;
         }
 
         // Moving stop to the end of the set
-        list<coord>::const_iterator stop = it;
+        list<Dataset::data_point>::const_iterator stop = it;
         for (int i = 0; i < step; i++) {
             stop++;
         }
@@ -197,7 +193,7 @@ void split(list<coord>& raw_data, list<coord>& output) {
         }
 
         // Creating the coord for the temporal bin and pushing to the result list
-        coord result;
+        Dataset::data_point result;
         result.pos = pos_sum / step;
         result.vel = vel_sum / step;
         result.eff = eff_sum / step;
@@ -341,6 +337,41 @@ string confirm_guess(const string& guess) {
     return label;
 }
 
+list<Dataset::data_point> join_lists() {
+    list<Dataset::data_point> result;
+
+    list_it j1 = joint_1_temp.begin();
+    list_it j2 = joint_2_temp.begin();
+    list_it j3 = joint_3_temp.begin();
+    list_it j4 = joint_4_temp.begin();
+    list_it j5 = joint_5_temp.begin();
+    list_it j6 = joint_6_temp.begin();
+    list_it f1 = finger_1_temp.begin();
+    list_it f2 = finger_2_temp.begin();
+
+    // Printing the temporal bins
+    for (int i = 0; i < 10; i++) {
+        result.push_back(*j1);
+        result.push_back(*j2);
+        result.push_back(*j3);
+        result.push_back(*j4);
+        result.push_back(*j5);
+        result.push_back(*j6);
+        result.push_back(*f1);
+        result.push_back(*f2);
+        j1++;
+        j2++;
+        j3++;
+        j4++;
+        j5++;
+        j6++;
+        f1++;
+        f2++;
+    }
+
+    return result;
+}
+
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "arff_recorder");
@@ -393,8 +424,8 @@ int main(int argc, char** argv) {
         split_lists();
 
         // Perform k-NN on recorded action
-        string guess;
-        // TODO perform k-NN
+        list<Dataset::data_point> set = join_lists();
+        string guess = data.guess_classification(set);
 
         // Print out the guess for the action
         print_guess(guess);
