@@ -10,7 +10,7 @@ using std::string;
 using std::map;
 
 bool Dataset::is_num(char c) {
-    return isdigit(c) || c == '.';
+    return isdigit(c) || c == '.' || c == 'e' || c== '+' || c == '-';
 }
 
 list<Dataset::data_point> Dataset::build_bin_list(const vector<float>& values) {
