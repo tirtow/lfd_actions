@@ -28,6 +28,13 @@ class Dataset {
          */
         void print_dataset();
 
+        /**
+         * Guesses the classification for the given action using k-NN to
+         * get the nearest neighbor for each temporal bin
+         * Returns the guessed classifaction
+         */
+        std::string guess_classification(const std::list<data_point>&);
+
     private:
         // Struct for the data points for each temporal bin
         struct data_point {
@@ -78,13 +85,6 @@ class Dataset {
          * Prints out one of the action's data points and it's classification
          */
         void print_list(const std::string&, const std::list<data_point>&);
-
-        /**
-         * Guesses the classification for the given action using k-NN to
-         * get the nearest neighbor for each temporal bin
-         * Returns the guessed classifaction
-         */
-        std::string guess_classification(const std::list<data_point>&);
 
 };
 
