@@ -404,7 +404,7 @@ int main(int argc, char** argv) {
         os.open(file.c_str());
     }
 
-    bool again = false;
+    bool again = true;
     while (again) {
         // Waiting to record
         cout << "Press [Enter] to start";
