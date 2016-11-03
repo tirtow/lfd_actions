@@ -22,6 +22,10 @@ class Dataset {
             double eff;
         };
 
+        // List types being used for a Dataset
+        typedef std::list<data_point> action_list;
+        typedef std::list<action_list> action_set;
+
         /**
          * Builds a Dataset given an input stream to a file
          * The file should have the data for each action on a line with each
@@ -41,19 +45,16 @@ class Dataset {
          * get the nearest neighbor for each temporal bin
          * Returns the guessed classifaction
          */
-        std::string guess_classification(const std::list<data_point>&);
+        std::string guess_classification(const action_list&);
 
     private:
-        typedef std::list<data_point> action_list;
-        typedef std::list<action_list> action_set;
-
         // Defining iterators for the internal values
-        typedef std::list<data_point>::const_iterator data_list_cit;
-        typedef std::list<std::list<data_point> >::const_iterator data_group_cit;
+        typedef action_list::const_iterator data_list_cit;
+        typedef action_set::const_iterator data_group_cit;
 
         // The lists of each action based on classification
-        std::list<std::list<data_point> > lifts;
-        std::list<std::list<data_point> > sweeps;
+        action_set lifts;
+        action_set sweeps;
 
         /**
          * Gets whether or not character is part of a number
@@ -67,7 +68,7 @@ class Dataset {
          * with all bins for time step 1 then followed by time step 2, etc
          * Returns the data_point list that was built
          */
-        std::list<data_point> build_bin_list(const std::vector<float>&);
+        action_list build_bin_list(const std::vector<float>&);
 
         /**
          * Splits a string up into a vector of floats
@@ -91,16 +92,25 @@ class Dataset {
          * Returns the name of the classification based on the one temporal bin
          */
         std::string bin_classification(const data_point&,
-                const std::list<data_point>&, const std::list<data_point>&);
+                const action_list&, const action_list&);
 
+        /**
+         * Gets the data_points from an action_set from the specified joint and
+         * temporal bin
+         * Returns an action_list of data_points for a single joint and time
+         */
         action_list get_bin(int, int, const action_set&);
 
+        /**
+         * Gets the key to the maximum value in a map of strings to ints
+         * Returns the key with the max value
+         */
         std::string get_max_in_map(const std::map<std::string, int>&);
 
         /**
          * Prints out one of the action's data points and it's classification
          */
-        void print_list(const std::string&, const std::list<data_point>&);
+        void print_list(const std::string&, const action_list&);
 
 };
 

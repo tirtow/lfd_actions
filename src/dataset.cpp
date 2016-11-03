@@ -13,8 +13,8 @@ bool Dataset::is_num(char c) {
     return isdigit(c) || c == '.' || c == 'e' || c== '+' || c == '-';
 }
 
-list<Dataset::data_point> Dataset::build_bin_list(const vector<float>& values) {
-    list<Dataset::data_point> data_points;
+Dataset::action_list Dataset::build_bin_list(const vector<float>& values) {
+    action_list data_points;
 
     // Looping through all the data points
     for (int i = 0; i < values.size(); i += 3) {
@@ -52,8 +52,7 @@ string Dataset::split_line(const string& line, vector<float>& values) {
     return classification;
 }
 
-void Dataset::print_list(const string& classification,
-        const list<Dataset::data_point>& data) {
+void Dataset::print_list(const string& classification, const action_list& data) {
     // Looping through list and printing each data point
     for (data_list_cit it = data.begin(); it != data.end(); it++) {
         cout << it->vel << " " << it->pos << " " << it->eff << " ";
@@ -75,7 +74,7 @@ Dataset::Dataset(ifstream& is) {
         string classification = split_line(line, values);
 
         // Building the data_points list
-        list<data_point> data_points = build_bin_list(values);
+        action_list data_points = build_bin_list(values);
 
         // Pushing to appropriate list
         if (classification == "lift") {
@@ -151,8 +150,8 @@ string Dataset::get_max_in_map(const map<string, int>& counts) {
     return max_key;
 }
 
-string Dataset::bin_classification(const data_point& point, const list<data_point>& liftPoints
-   , const list<data_point>& sweepPoints){
+string Dataset::bin_classification(const data_point& point,
+        const action_list& liftPoints, const action_list& sweepPoints){
 
    double liftCmp = 99999999999999.0;
    double sweepCmp = 99999999999999.0;
