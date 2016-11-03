@@ -22,6 +22,7 @@ class Dataset {
             double eff;
         };
 
+        // Struct for the data points with a label for the classification
         struct labeled_data_point {
             std::string label;
             data_point data;
@@ -39,6 +40,11 @@ class Dataset {
 
         // List of actions
         typedef std::list<action> action_set;
+
+        // Defining iterators for the internal values
+        typedef action_list::const_iterator data_list_cit;
+        typedef labeled_action_list::const_iterator l_data_list_cit;
+        typedef action_set::const_iterator data_group_cit;
 
         /**
          * Builds a Dataset given an input stream to a file
@@ -62,11 +68,6 @@ class Dataset {
         std::string guess_classification(const action_list&);
 
     private:
-        // Defining iterators for the internal values
-        typedef action_list::const_iterator data_list_cit;
-        typedef labeled_action_list::const_iterator l_data_list_cit;
-        typedef action_set::const_iterator data_group_cit;
-
         // The lists of each action based on classification
         action_set actions;
 
@@ -110,7 +111,8 @@ class Dataset {
         /**
          * Gets the data_points from an action_set from the specified joint and
          * temporal bin
-         * Returns an action_list of data_points for a single joint and time
+         * Returns a labeled_action_list of data_points for a single joint
+         * and time
          */
         labeled_action_list get_bin(int, int, const action_set&);
 

@@ -9,6 +9,52 @@ using std::vector;
 using std::string;
 using std::map;
 
+Dataset::Dataset(ifstream& is) {
+    // Looping while not at end of file
+    while (is) {
+        // Getting the line
+        string line;
+        getline(is, line);
+
+        // Splitting the line into a vector of floats
+        vector<float> values;
+        string classification = split_line(line, values);
+
+        // Building the data_points list
+        action_list data_points = build_bin_list(values);
+
+        // Building the action
+        action ac;
+        ac.classification = classification;
+        ac.data = data_points;
+
+        actions.push_back(ac);
+    }
+}
+
+void Dataset::print_dataset() {
+    for (data_group_cit it = actions.begin(); it != actions.end(); it++) {
+        print_list(*it);
+    }
+}
+
+string Dataset::guess_classification(const action_list& action) {
+    int bin = 1;
+    map<string, int> counts;
+    data_list_cit action_it = action.begin();
+    while (action_it != action.end()) {
+        for (int joint = 1; joint <= 8; joint++) {
+            labeled_action_list bins = get_bin(joint, bin, actions);
+            string classification = bin_classification(*action_it++, bins);
+            counts[classification]++;
+        }
+
+        bin++;
+    }
+
+    return get_max_in_map(counts);
+}
+
 bool Dataset::is_num(char c) {
     return isdigit(c) || c == '.' || c == 'e' || c== '+' || c == '-';
 }
@@ -52,57 +98,6 @@ string Dataset::split_line(const string& line, vector<float>& values) {
     return classification;
 }
 
-void Dataset::print_list(const action& ac) {
-    // Looping through list and printing each data point
-    for (data_list_cit it = ac.data.begin(); it != ac.data.end(); it++) {
-        cout << it->vel << " " << it->pos << " " << it->eff << " ";
-        
-    }
-
-    // Printing the classification
-    cout << ac.classification << endl;
-}
-
-Dataset::Dataset(ifstream& is) {
-    // Looping while not at end of file
-    while (is) {
-        // Getting the line
-        string line;
-        getline(is, line);
-
-        // Splitting the line into a vector of floats
-        vector<float> values;
-        string classification = split_line(line, values);
-
-        // Building the data_points list
-        action_list data_points = build_bin_list(values);
-
-        // Building the action
-        action ac;
-        ac.classification = classification;
-        ac.data = data_points;
-
-        actions.push_back(ac);
-    }
-}
-
-string Dataset::guess_classification(const action_list& action) {
-    int bin = 1;
-    map<string, int> counts;
-    data_list_cit action_it = action.begin();
-    while (action_it != action.end()) {
-        for (int joint = 1; joint <= 8; joint++) {
-            labeled_action_list bins = get_bin(joint, bin, actions);
-            string classification = bin_classification(*action_it++, bins);
-            counts[classification]++;
-        }
-
-        bin++;
-    }
-
-    return get_max_in_map(counts);
-}
-
 double Dataset::get_dist(const Dataset::data_point& data,
         const Dataset::data_point& action) {
     double delta_vel = pow(action.vel - data.vel, 2);
@@ -112,7 +107,24 @@ double Dataset::get_dist(const Dataset::data_point& data,
     return sqrt(delta_vel + delta_pos + delta_eff);
 }
 
-Dataset::labeled_action_list Dataset::get_bin(int joint, int bin, const action_set& set) {
+string Dataset::bin_classification(const data_point& point,
+        const labeled_action_list& bins) {
+    string closest_str = "";
+    double closest_dist = 99999999999999.0;
+
+    for (l_data_list_cit it = bins.begin(); it != bins.end(); it++) {
+        double dist = get_dist(point, it->data);
+        if (dist < closest_dist) {
+            closest_dist = dist;
+            closest_str = it->label;
+        }
+    }
+
+    return closest_str;
+}
+
+Dataset::labeled_action_list Dataset::get_bin(int joint, int bin,
+        const action_set& set) {
     labeled_action_list result;
     for (data_group_cit set_it = set.begin(); set_it != set.end(); set_it++) {
         action_list current_list = set_it->data;
@@ -155,24 +167,12 @@ string Dataset::get_max_in_map(const map<string, int>& counts) {
     return max_key;
 }
 
-string Dataset::bin_classification(const data_point& point,
-        const labeled_action_list& bins) {
-    string closest_str = "";
-    double closest_dist = 99999999999999.0;
-
-    for (l_data_list_cit it = bins.begin(); it != bins.end(); it++) {
-        double dist = get_dist(point, it->data);
-        if (dist < closest_dist) {
-            closest_dist = dist;
-            closest_str = it->label;
-        }
+void Dataset::print_list(const action& ac) {
+    // Looping through list and printing each data point
+    for (data_list_cit it = ac.data.begin(); it != ac.data.end(); it++) {
+        cout << it->vel << " " << it->pos << " " << it->eff << " ";
     }
 
-    return closest_str;
-}
-
-void Dataset::print_dataset() {
-    for (data_group_cit it = actions.begin(); it != actions.end(); it++) {
-        print_list(*it);
-    }
+    // Printing the classification
+    cout << ac.classification << endl;
 }
