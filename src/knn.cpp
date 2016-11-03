@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <list>
-#include <map>
 #include <termios.h>
 #include <cmath>
 #include <climits>
@@ -21,41 +20,29 @@ using std::ifstream;
 using std::ofstream;
 using std::vector;
 using std::list;
-using std::map;
-
-// struct for the different values obtained from the joints
-struct coord {
-    double vel;
-    double pos;
-    double eff;
-};
-
-typedef list<Dataset::data_point>::const_iterator list_it;
-typedef list<list<Dataset::data_point> >::const_iterator data_it;
 
 // The topic the arm joints publish to
 const string ARM_TOPIC = "/joint_states";
 
 // lists of joint_states
-map<string, list<coord> > joints;
-list<Dataset::data_point> joint_1;
-list<Dataset::data_point> joint_2;
-list<Dataset::data_point> joint_3;
-list<Dataset::data_point> joint_4;
-list<Dataset::data_point> joint_5;
-list<Dataset::data_point> joint_6;
-list<Dataset::data_point> finger_1;
-list<Dataset::data_point> finger_2;
+Dataset::action_list joint_1;
+Dataset::action_list joint_2;
+Dataset::action_list joint_3;
+Dataset::action_list joint_4;
+Dataset::action_list joint_5;
+Dataset::action_list joint_6;
+Dataset::action_list finger_1;
+Dataset::action_list finger_2;
 
 // lists of temporal bins for the coord
-list<Dataset::data_point> joint_1_temp;
-list<Dataset::data_point> joint_2_temp;
-list<Dataset::data_point> joint_3_temp;
-list<Dataset::data_point> joint_4_temp;
-list<Dataset::data_point> joint_5_temp;
-list<Dataset::data_point> joint_6_temp;
-list<Dataset::data_point> finger_1_temp;
-list<Dataset::data_point> finger_2_temp;
+Dataset::action_list joint_1_temp;
+Dataset::action_list joint_2_temp;
+Dataset::action_list joint_3_temp;
+Dataset::action_list joint_4_temp;
+Dataset::action_list joint_5_temp;
+Dataset::action_list joint_6_temp;
+Dataset::action_list finger_1_temp;
+Dataset::action_list finger_2_temp;
 
 /**
  * Reads a character without blocking execution
@@ -83,28 +70,6 @@ int getch() {
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
     return c;
-}
-
-void arm_cb2(const sensor_msgs::JointState::ConstPtr& msg) {
-    vector<string> names = msg->name;
-
-    if (names.size() == 8) {
-        vector<double> positions = msg->position;
-        vector<double> velocities = msg->velocity;
-        vector<double> efforts = msg->effort;
-        
-        int i = 0;
-        for (vector<string>::const_iterator it = names.begin();
-                it != names.end(); it++) {
-            coord state;
-            state.pos = positions[i];
-            state.vel = velocities[i];
-            state.eff = efforts[i];
-    
-            joints[*it].push_back(state);
-            i++;
-        }
-    }
 }
 
 /**
@@ -162,24 +127,25 @@ void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
 /**
  * Splits the raw_data into temporal bins into the output
  */
-void split(list<Dataset::data_point>& raw_data, list<Dataset::data_point>& output) {
-    list<Dataset::data_point>::size_type size = raw_data.size();
+void split(Dataset::action_list& raw_data, Dataset::action_list& output) {
+    Dataset::action_list::size_type size = raw_data.size();
     int step = std::ceil(size / 10.0);
 
     // Splitting the list into 10 sets and looping through each set
-    for (list<Dataset::data_point>::size_type start = 0; start < raw_data.size(); start += step) {
+    for (Dataset::action_list::size_type start = 0; start < raw_data.size();
+            start += step) {
         double pos_sum = 0;
         double vel_sum = 0;
         double eff_sum = 0;
 
         // Moving it to the beginning of the set
-        list<Dataset::data_point>::const_iterator it = raw_data.begin();
+        Dataset::data_list_cit it = raw_data.begin();
         for (int i = 0; i < start; i++) {
             it++;
         }
 
         // Moving stop to the end of the set
-        list<Dataset::data_point>::const_iterator stop = it;
+        Dataset::data_list_cit stop = it;
         for (int i = 0; i < step; i++) {
             stop++;
         }
@@ -206,14 +172,14 @@ void split(list<Dataset::data_point>& raw_data, list<Dataset::data_point>& outpu
  * Writes j1.vel j1.pos j1.eff j2.vel... for each temporal bin
  */
 void write_list(ofstream& os, string classification) {
-    list_it j1 = joint_1_temp.begin();
-    list_it j2 = joint_2_temp.begin();
-    list_it j3 = joint_3_temp.begin();
-    list_it j4 = joint_4_temp.begin();
-    list_it j5 = joint_5_temp.begin();
-    list_it j6 = joint_6_temp.begin();
-    list_it f1 = finger_1_temp.begin();
-    list_it f2 = finger_2_temp.begin();
+    Dataset::data_list_cit j1 = joint_1_temp.begin();
+    Dataset::data_list_cit j2 = joint_2_temp.begin();
+    Dataset::data_list_cit j3 = joint_3_temp.begin();
+    Dataset::data_list_cit j4 = joint_4_temp.begin();
+    Dataset::data_list_cit j5 = joint_5_temp.begin();
+    Dataset::data_list_cit j6 = joint_6_temp.begin();
+    Dataset::data_list_cit f1 = finger_1_temp.begin();
+    Dataset::data_list_cit f2 = finger_2_temp.begin();
 
     // Printing the temporal bins
     for (int i = 0; i < 10; i++) {
@@ -328,17 +294,20 @@ string confirm_guess(const string& guess) {
     return label;
 }
 
-list<Dataset::data_point> join_lists() {
-    list<Dataset::data_point> result;
+/**
+ * Joins the lists of temporal bins into one list
+ */
+Dataset::action_list join_lists() {
+    Dataset::action_list result;
 
-    list_it j1 = joint_1_temp.begin();
-    list_it j2 = joint_2_temp.begin();
-    list_it j3 = joint_3_temp.begin();
-    list_it j4 = joint_4_temp.begin();
-    list_it j5 = joint_5_temp.begin();
-    list_it j6 = joint_6_temp.begin();
-    list_it f1 = finger_1_temp.begin();
-    list_it f2 = finger_2_temp.begin();
+    Dataset::data_list_cit j1 = joint_1_temp.begin();
+    Dataset::data_list_cit j2 = joint_2_temp.begin();
+    Dataset::data_list_cit j3 = joint_3_temp.begin();
+    Dataset::data_list_cit j4 = joint_4_temp.begin();
+    Dataset::data_list_cit j5 = joint_5_temp.begin();
+    Dataset::data_list_cit j6 = joint_6_temp.begin();
+    Dataset::data_list_cit f1 = finger_1_temp.begin();
+    Dataset::data_list_cit f2 = finger_2_temp.begin();
 
     // Printing the temporal bins
     for (int i = 0; i < 10; i++) {
@@ -451,7 +420,7 @@ int main(int argc, char** argv) {
         split_lists();
 
         // Perform k-NN on recorded action
-        list<Dataset::data_point> set = join_lists();
+        Dataset::action_list set = join_lists();
         string guess = data.guess_classification(set);
 
         // Print out the guess for the action
