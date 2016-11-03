@@ -387,21 +387,20 @@ int main(int argc, char** argv) {
     if (argc >= 3) {
         string super = argv[2];
         supervised = super == "supervise";
-        ROS_INFO("supervise");
     }
+    ROS_INFO("%s", "Supervised = " + (supervised) ? "true" : "false");
 
     // Creating the subscriber
     ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
 
-    // Setting the filenames
-    string file = "dataset/actions.txt";
-
     // Opening ofstream for the dataset
     ofstream os;
-    if (file_exists(file)) {
-        os.open(file.c_str(), std::ios_base::app);
-    } else {
-        os.open(file.c_str());
+    if (supervised) {
+        if (file_exists(dataset_name)) {
+            os.open(dataset_name.c_str(), std::ios_base::app);
+        } else {
+            os.open(dataset_name.c_str());
+        }
     }
 
     bool again = true;
