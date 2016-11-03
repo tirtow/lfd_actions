@@ -351,7 +351,7 @@ int main(int argc, char** argv) {
     bool found_d = false;
     for (int i = 1; i < argc; i++) {
         string argv_str(argv[i]);
-        if (argv_str == "-d") {
+        if (argv_str == "-src" || argv_str == "--source") {
             if (i + 1 <= argc) {
                 dataset_name = argv[++i];
                 found_d = true;
@@ -359,7 +359,7 @@ int main(int argc, char** argv) {
                 print_err();
                 return 1;
             }
-        } else if (argv_str == "-super") {
+        } else if (argv_str == "-super" || argv_str == "--supervise") {
             if (i + 1 <= argc) {
                 supervised = string(argv[++i]) == "true";
             } else {
