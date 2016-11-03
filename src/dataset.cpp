@@ -52,14 +52,15 @@ string Dataset::split_line(const string& line, vector<float>& values) {
     return classification;
 }
 
-void Dataset::print_list(const string& classification, const action_list& data) {
+void Dataset::print_list(const action& ac) {
     // Looping through list and printing each data point
-    for (data_list_cit it = data.begin(); it != data.end(); it++) {
+    for (data_list_cit it = ac.data.begin(); it != ac.data.end(); it++) {
         cout << it->vel << " " << it->pos << " " << it->eff << " ";
+        
     }
 
     // Printing the classification
-    cout << classification << endl;
+    cout << ac.classification << endl;
 }
 
 Dataset::Dataset(ifstream& is) {
@@ -76,12 +77,12 @@ Dataset::Dataset(ifstream& is) {
         // Building the data_points list
         action_list data_points = build_bin_list(values);
 
-        // Pushing to appropriate list
-        if (classification == "lift") {
-            lifts.push_back(data_points);
-        } else if (classification == "sweep") {
-            sweeps.push_back(data_points);
-        }
+        // Building the action
+        action ac;
+        ac.classification = classification;
+        ac.data = data_points;
+
+        actions.push_back(ac);
     }
 }
 
@@ -91,9 +92,8 @@ string Dataset::guess_classification(const action_list& action) {
     data_list_cit action_it = action.begin();
     while (action_it != action.end()) {
         for (int joint = 1; joint <= 8; joint++) {
-            action_list lift_bins = get_bin(joint, bin, lifts);
-            action_list sweep_bins = get_bin(joint, bin, sweeps);
-            string classification = bin_classification(*action_it++, lift_bins, sweep_bins);
+            labeled_action_list bins = get_bin(joint, bin, actions);
+            string classification = bin_classification(*action_it++, bins);
             counts[classification]++;
         }
 
@@ -112,10 +112,10 @@ double Dataset::get_dist(const Dataset::data_point& data,
     return sqrt(delta_vel + delta_pos + delta_eff);
 }
 
-Dataset::action_list Dataset::get_bin(int joint, int bin, const action_set& set) {
-    action_list result;
+Dataset::labeled_action_list Dataset::get_bin(int joint, int bin, const action_set& set) {
+    labeled_action_list result;
     for (data_group_cit set_it = set.begin(); set_it != set.end(); set_it++) {
-        action_list current_list = *set_it;
+        action_list current_list = set_it->data;
         data_list_cit list_it = current_list.begin();
 
         // Moving list_it down to the appropriate bin
@@ -128,8 +128,13 @@ Dataset::action_list Dataset::get_bin(int joint, int bin, const action_set& set)
             list_it++;
         }
 
-        // Pushing back the data_point
-        result.push_back(*list_it);
+        // Building the labeled_data_point
+        labeled_data_point ldp;
+        ldp.label = set_it->classification;
+        ldp.data = *list_it;
+
+        // Pushing back the labeled_data_point
+        result.push_back(ldp);
     }
 
     return result;
@@ -151,53 +156,23 @@ string Dataset::get_max_in_map(const map<string, int>& counts) {
 }
 
 string Dataset::bin_classification(const data_point& point,
-        const action_list& liftPoints, const action_list& sweepPoints){
+        const labeled_action_list& bins) {
+    string closest_str = "";
+    double closest_dist = 99999999999999.0;
 
-   double liftCmp = 99999999999999.0;
-   double sweepCmp = 99999999999999.0;
-
-    for(data_list_cit it = liftPoints.begin(); it != liftPoints.end(); it++) {
-        double tempLiftCmp = get_dist(point, *it);
-
-        if( liftCmp > tempLiftCmp )
-        {
-          liftCmp = tempLiftCmp;
+    for (l_data_list_cit it = bins.begin(); it != bins.end(); it++) {
+        double dist = get_dist(point, it->data);
+        if (dist < closest_dist) {
+            closest_dist = dist;
+            closest_str = it->label;
         }
-        
     }
 
-    for(data_list_cit it = sweepPoints.begin(); it != sweepPoints.end(); it++) {
-       double tempSweepCmp = get_dist(point, *it);
-   
-       if( sweepCmp > tempSweepCmp )
-       {
-         sweepCmp = tempSweepCmp;
-       }
-
-    }
-
-    // Compare the values of lifts and sweeps to the data point of the unknown action
-    // return the classification of the one with the smaller value
-
-
-    if( liftCmp > sweepCmp)
-    {
-       return "sweep";
-    }
-    else
-    {
-       return "lift";
-    }
+    return closest_str;
 }
 
 void Dataset::print_dataset() {
-    // Printing all the data for lifts
-    for (data_group_cit it = lifts.begin(); it != lifts.end(); it++) {
-        print_list("lift", *it);
-    }
-
-    // Printing all the data for sweeps
-    for (data_group_cit it = sweeps.begin(); it != sweeps.end(); it++) {
-        print_list("sweep", *it);
+    for (data_group_cit it = actions.begin(); it != actions.end(); it++) {
+        print_list(*it);
     }
 }

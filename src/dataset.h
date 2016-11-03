@@ -22,9 +22,23 @@ class Dataset {
             double eff;
         };
 
-        // List types being used for a Dataset
+        struct labeled_data_point {
+            std::string label;
+            data_point data;
+        };
+
+        // List type being used for a Dataset
         typedef std::list<data_point> action_list;
-        typedef std::list<action_list> action_set;
+        typedef std::list<labeled_data_point> labeled_action_list;
+
+        // Struct for the list of data for an action
+        struct action {
+            std::string classification;
+            action_list data;
+        };
+
+        // List of actions
+        typedef std::list<action> action_set;
 
         /**
          * Builds a Dataset given an input stream to a file
@@ -50,11 +64,11 @@ class Dataset {
     private:
         // Defining iterators for the internal values
         typedef action_list::const_iterator data_list_cit;
+        typedef labeled_action_list::const_iterator l_data_list_cit;
         typedef action_set::const_iterator data_group_cit;
 
         // The lists of each action based on classification
-        action_set lifts;
-        action_set sweeps;
+        action_set actions;
 
         /**
          * Gets whether or not character is part of a number
@@ -91,15 +105,14 @@ class Dataset {
          * data_points from actions in the dataset from the same temporal bin
          * Returns the name of the classification based on the one temporal bin
          */
-        std::string bin_classification(const data_point&,
-                const action_list&, const action_list&);
+        std::string bin_classification(const data_point&, const labeled_action_list&);
 
         /**
          * Gets the data_points from an action_set from the specified joint and
          * temporal bin
          * Returns an action_list of data_points for a single joint and time
          */
-        action_list get_bin(int, int, const action_set&);
+        labeled_action_list get_bin(int, int, const action_set&);
 
         /**
          * Gets the key to the maximum value in a map of strings to ints
@@ -110,7 +123,7 @@ class Dataset {
         /**
          * Prints out one of the action's data points and it's classification
          */
-        void print_list(const std::string&, const action_list&);
+        void print_list(const action&);
 
 };
 
