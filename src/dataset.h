@@ -51,6 +51,8 @@ class Dataset {
          * The file should have the data for each action on a line with each
          * data point separated by a single whitespace. The line should end
          * with the classification for the action
+         * Takes an int for the number of nearest neighbors (k) to consider in
+         * the k-NN classification
          */
         Dataset(std::ifstream&, int);
 

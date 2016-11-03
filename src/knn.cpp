@@ -385,7 +385,7 @@ int main(int argc, char** argv) {
 
     // Building the dataset
     ifstream data_file(dataset_name.c_str());
-    Dataset data(data_file);
+    Dataset data(data_file, 3);
 
     // Creating the subscriber
     ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
