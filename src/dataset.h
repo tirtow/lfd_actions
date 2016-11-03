@@ -52,7 +52,7 @@ class Dataset {
          * data point separated by a single whitespace. The line should end
          * with the classification for the action
          */
-        Dataset(std::ifstream&);
+        Dataset(std::ifstream&, int);
 
         /**
          * Prints out each actions data_points and classification to the
@@ -68,6 +68,9 @@ class Dataset {
         std::string guess_classification(const action_list&);
 
     private:
+        // The number of neighbors to consider for k-NN
+        int k;
+
         // The lists of each action based on classification
         action_set actions;
 

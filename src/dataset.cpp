@@ -9,7 +9,7 @@ using std::vector;
 using std::string;
 using std::map;
 
-Dataset::Dataset(ifstream& is) {
+Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
     // Looping while not at end of file
     while (is) {
         // Getting the line
@@ -110,33 +110,47 @@ double Dataset::get_dist(const Dataset::data_point& data,
 string Dataset::bin_classification(const data_point& point,
         const labeled_action_list& bins) {
     map<int, string> closest;
+    vector<string> closest_str;
+    vector<double> closest_dist;
 
     // Calculating the distance between each bin and getting the 3 nearest
     for (l_data_list_cit it = bins.begin(); it != bins.end(); it++) {
         double dist = get_dist(point, it->data);
-        bool found = false;
-        map<int, string>::iterator map_it = closest.begin();
 
-        // Looping until found one less than or end of map
-        while (!found && map_it != closest.end()) {
-            if (dist < map_it->first) {
-                closest.erase(map_it);
-                closest[dist] = it->label;
+        // Looping through closest data_points to see if need to place
+        bool found = false;
+        vector<double>::iterator dist_it = closest_dist.begin();
+        vector<string>::iterator str_it = closest_str.begin();
+        while (!found && dist_it != closest_dist.end()) {
+            if (dist < *dist_it) {
+                closest_dist.insert(dist_it, dist);
+                closest_str.insert(str_it, it->label);
                 found = true;
             }
 
-            map_it++;
+            dist_it++;
+            str_it++;
+        }
+
+        if (!found && closest_dist.size() < k) {
+            // Have less than k elements, adding to end
+            closest_dist.push_back(dist);
+            closest_str.push_back(it->label);
+        } else if (closest_dist.size() > k) {
+            // Have more than k elements, deleting last one
+            closest_dist.pop_back();
+            closest_str.pop_back();
         }
     }
 
-    // Summing the number of each label
+    // Tallying the occurances of each label
     map<string, int> counts;
-    for (map<int, string>::const_iterator it = closest.begin();
-            it != closest.end(); it++) {
-        counts[it->second]++;
+    for (vector<string>::const_iterator it = closest_str.begin();
+            it != closest_str.end(); it++) {
+        counts[*it]++;
     }
 
-    // Returning the label that appeared most in the top 3
+    // Returning the label that occurs most often
     return get_max_in_map(counts);
 }
 
