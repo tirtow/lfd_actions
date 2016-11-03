@@ -83,16 +83,16 @@ class Dataset {
          * with all bins for time step 1 then followed by time step 2, etc
          * Returns the data_point list that was built
          */
-        action_list build_bin_list(const std::vector<float>&);
+        action_list build_bin_list(const std::vector<double>&);
 
         /**
-         * Splits a string up into a vector of floats
+         * Splits a string up into a vector of doubles
          * Splits the string using single whitespace characters
          * The line should end with the classification for the data
          * Returns the split string through the vector reference and returns
          * the classication for the data
          */
-        std::string split_line(const std::string&, std::vector<float>&);
+        std::string split_line(const std::string&, std::vector<double>&);
 
         /**
          * Gets the distance between two data_points by extending the

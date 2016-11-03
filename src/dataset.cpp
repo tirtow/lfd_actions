@@ -16,8 +16,8 @@ Dataset::Dataset(ifstream& is) {
         string line;
         getline(is, line);
 
-        // Splitting the line into a vector of floats
-        vector<float> values;
+        // Splitting the line into a vector of doubles
+        vector<double> values;
         string classification = split_line(line, values);
 
         // Building the data_points list
@@ -59,7 +59,7 @@ bool Dataset::is_num(char c) {
     return isdigit(c) || c == '.' || c == 'e' || c== '+' || c == '-';
 }
 
-Dataset::action_list Dataset::build_bin_list(const vector<float>& values) {
+Dataset::action_list Dataset::build_bin_list(const vector<double>& values) {
     action_list data_points;
 
     // Looping through all the data points
@@ -74,7 +74,7 @@ Dataset::action_list Dataset::build_bin_list(const vector<float>& values) {
     return data_points;
 }
 
-string Dataset::split_line(const string& line, vector<float>& values) {
+string Dataset::split_line(const string& line, vector<double>& values) {
     // Iterating over entire line
     string::const_iterator begin = line.begin();
     while (is_num(*begin)) {
@@ -84,7 +84,7 @@ string Dataset::split_line(const string& line, vector<float>& values) {
             end++;
         }
 
-        // Building string from iterators and pushing float value to vector
+        // Building string from iterators and pushing double value to vector
         string val(begin, end);
         values.push_back(atof(val.c_str()));
 
