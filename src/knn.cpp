@@ -372,23 +372,60 @@ list<Dataset::data_point> join_lists() {
     return result;
 }
 
+/**
+ * Displays error when incorrect command line args given
+ */
+void print_err() {
+    ROS_ERROR("Usage: rosrun lfd_actions knn -d <dataset file>"
+              "\n\t\t\t\t(Optional)\n\t\t\t\t -super <true/false>");
+}
+
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "arff_recorder");
     ros::NodeHandle n;
 
-    // Getting the input dataset file
-    string dataset_name = argv[1];
+    // Getting command line arguments
+    string dataset_name;
+    bool supervised = false;
+    bool found_d = false;
+    for (int i = 1; i < argc; i++) {
+        string argv_str(argv[i]);
+        if (argv_str == "-d") {
+            if (i + 1 <= argc) {
+                dataset_name = argv[++i];
+                found_d = true;
+            } else {
+                print_err();
+                return 1;
+            }
+        } else if (argv_str == "-super") {
+            if (i + 1 <= argc) {
+                supervised = string(argv[++i]) == "true";
+            } else {
+                print_err();
+                return 1;
+            }
+        }
+    }
+
+    // Checking that a dataset file has been specified
+    if (!found_d) {
+        print_err();
+        return 1;
+    }
+
+    // Outputing command line args
+    ROS_INFO("dataset path: %s", dataset_name.c_str());
+    if (supervised) {
+        ROS_INFO("supervised = true");
+    } else {
+        ROS_INFO("supervised = false");
+    }
+
+    // Building the dataset
     ifstream data_file(dataset_name.c_str());
     Dataset data(data_file);
-
-    // Getting whether or not to supervise
-    bool supervised = false;
-    if (argc >= 3) {
-        string super = argv[2];
-        supervised = super == "supervise";
-    }
-    ROS_INFO("%s", "Supervised = " + (supervised) ? "true" : "false");
 
     // Creating the subscriber
     ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
