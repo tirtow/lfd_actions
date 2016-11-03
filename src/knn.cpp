@@ -201,16 +201,6 @@ void split(list<Dataset::data_point>& raw_data, list<Dataset::data_point>& outpu
     }
 }
 
-/*
-void write_list2(ofstream& os, string classification) {
-    typedef map<string, list<coord> >::const_iterator map_it;
-
-    for (map_it it = joints.begin(); it != joints.end(); it++) {
-        list<coord> vals = it->second();
-    }
-}
-*/
-
 /**
  * Writes the temporal bins for each joint and the classification for the action
  * Writes j1.vel j1.pos j1.eff j2.vel... for each temporal bin
@@ -299,9 +289,10 @@ void split_lists() {
  * Returns true if going to record another action, false otherwise
  */
 bool repeat() {
-    string repeat;
+    string repeat, clear;
     cout << "Again [Y/y]: ";
     cin >> repeat;
+    getline(cin, clear);
     if (repeat != "Y" && repeat != "y") {
         return false;
     }
