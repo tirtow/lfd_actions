@@ -109,18 +109,35 @@ double Dataset::get_dist(const Dataset::data_point& data,
 
 string Dataset::bin_classification(const data_point& point,
         const labeled_action_list& bins) {
-    string closest_str = "";
-    double closest_dist = 99999999999999.0;
+    map<int, string> closest;
 
+    // Calculating the distance between each bin and getting the 3 nearest
     for (l_data_list_cit it = bins.begin(); it != bins.end(); it++) {
         double dist = get_dist(point, it->data);
-        if (dist < closest_dist) {
-            closest_dist = dist;
-            closest_str = it->label;
+        bool found = false;
+        map<int, string>::iterator map_it = closest.begin();
+
+        // Looping until found one less than or end of map
+        while (!found && map_it != closest.end()) {
+            if (dist < map_it->first) {
+                closest.erase(map_it);
+                closest[dist] = it->label;
+                found = true;
+            }
+
+            map_it++;
         }
     }
 
-    return closest_str;
+    // Summing the number of each label
+    map<string, int> counts;
+    for (map<int, string>::const_iterator it = closest.begin();
+            it != closest.end(); it++) {
+        counts[it->second]++;
+    }
+
+    // Returning the label that appeared most in the top 3
+    return get_max_in_map(counts);
 }
 
 Dataset::labeled_action_list Dataset::get_bin(int joint, int bin,
