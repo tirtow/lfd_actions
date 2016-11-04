@@ -69,6 +69,15 @@ class Dataset {
          */
         std::string guess_classification(const action_list&);
 
+        /**
+         * Guesses the classification for the given action using k-NN to
+         * get the nearest neighbor for each temporal bin
+         * Sums the differences between each of the data_points and uses that
+         * to calculate the nearest neighbors
+         * Returns the guessed classifaction
+         */
+        std::string guess_classification_alt(const data_point&, const action_set&);
+
     private:
         // The number of neighbors to consider for k-NN
         int k;
@@ -105,6 +114,13 @@ class Dataset {
          * Returns the distance between the two points
          */
         double get_dist(const data_point&, const data_point&);
+
+        /**
+         * Creates a map of the values in the passed vector to the number of
+         * times that value occurs in the vector
+         * Returns the map of string to occurances
+         */
+        std::map<std::string, int> get_counts(const std::vector<std::string>&);
 
         /**
          * Gets the classification for the passed data_point based on the other

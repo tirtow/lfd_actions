@@ -107,6 +107,62 @@ double Dataset::get_dist(const Dataset::data_point& data,
     return sqrt(delta_vel + delta_pos + delta_eff);
 }
 
+string Dataset::guess_classification_alt(const data_point& point, const action_set& set) {
+    vector<double> closest_dist;
+    vector<string> closest_str;
+
+    // Looping through each action in the dataset
+    for (data_group_cit set_it = set.begin(); set_it != set.end(); set_it++) {
+        action current = *set_it;
+        double dist_sum = 0;
+
+        // Summing up all the distances for this action
+        for (data_list_cit it = current.data.begin();
+                it != current.data.end(); it++) {
+            dist_sum += get_dist(point, *it);
+        }
+
+        // Looping through closest data_points to see if need to place
+        bool found = false;
+        vector<double>::iterator dist_it = closest_dist.begin();
+        vector<string>::iterator str_it = closest_str.begin();
+        while (!found && dist_it != closest_dist.end()) {
+            // If smaller distance insert it
+            if (dist_sum < *dist_it) {
+                closest_dist.insert(dist_it, dist_sum);
+                closest_str.insert(str_it, current.classification);
+                found = true;
+            }
+
+            dist_it++;
+            str_it++;
+        }
+
+        if (!found && closest_dist.size() < k) {
+            // Have less than k elements, adding to end
+            closest_dist.push_back(dist_sum);
+            closest_str.push_back(current.classification);
+        } else if (closest_dist.size() > k) {
+            // Have more than k elements, deleting last one
+            closest_dist.pop_back();
+            closest_str.pop_back();
+        }
+    }
+
+    // Returning the string that occurs the most
+    return get_max_in_map(get_counts(closest_str));
+}
+
+map<string, int> Dataset::get_counts(const vector<string>& values) {
+    map<string, int> counts;
+    for (vector<string>::const_iterator it = values.begin();
+            it != values.end(); it++) {
+        counts[*it]++;
+    }
+
+    return counts;
+}
+
 string Dataset::bin_classification(const data_point& point,
         const labeled_action_list& bins) {
     map<int, string> closest;
