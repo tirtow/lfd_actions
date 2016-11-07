@@ -9,7 +9,9 @@
 #include <climits>
 #include "sensor_msgs/JointState.h"
 #include "dataset.h"
-#include "dataset.cpp"
+#include "dataset.cpp" 
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/Pose.h"
 
 using std::string;
 using std::cin;
@@ -20,9 +22,14 @@ using std::ifstream;
 using std::ofstream;
 using std::vector;
 using std::list;
+using geometry_msgs::Pose;
 
 // The topic the arm joints publish to
 const string ARM_TOPIC = "/joint_states";
+const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
+
+list<geometry_msgs::Pose> cartesian;
+list<geometry_msgs::Pose> cartesian_temp;
 
 // lists of joint_states
 Dataset::action_list joint_1;
@@ -124,6 +131,10 @@ void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
     }
 }
 
+void cart_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+    cartesian.push_back(msg->pose);
+}
+
 /**
  * Splits the raw_data into temporal bins into the output
  */
@@ -165,6 +176,74 @@ void split(Dataset::action_list& raw_data, Dataset::action_list& output) {
         result.eff = eff_sum / step;
         output.push_back(result);
     }
+}
+
+/**
+ * Splits the raw_data into temporal bins into the output
+ */
+void split(list<Pose>& raw_data, list<Pose>& output) {
+    Dataset::action_list::size_type size = raw_data.size();
+    int step = std::ceil(size / 10.0);
+
+    // Splitting the list into 10 sets and looping through each set
+    for (Dataset::action_list::size_type start = 0; start < raw_data.size();
+            start += step) {
+        double pos_x = 0;
+        double pos_y = 0;
+        double pos_z = 0;
+        double ori_x = 0;
+        double ori_y = 0;
+        double ori_z = 0;
+        double ori_w = 0;
+
+        // Moving it to the beginning of the set
+        list<Pose>::const_iterator it = raw_data.begin();
+        for (int i = 0; i < start; i++) {
+            it++;
+        }
+
+        // Moving stop to the end of the set
+        list<Pose>::const_iterator stop = it;
+        for (int i = 0; i < step; i++) {
+            stop++;
+        }
+
+        // Summing the positions, velocities, and efforts for the set
+        while (it != stop && it != raw_data.end()) {
+            pos_x += it->position.x;
+            pos_y += it->position.y;
+            pos_z += it->position.z;
+            ori_x += it->orientation.z;
+            ori_y += it->orientation.z;
+            ori_z += it->orientation.z;
+            ori_w += it->orientation.z;
+            it++;
+        }
+
+        Pose result;
+        result.position.x = pos_x / step;
+        result.position.y = pos_y / step;
+        result.position.z = pos_z / step;
+        result.orientation.x = ori_x / step;
+        result.orientation.y = ori_y / step;
+        result.orientation.z = ori_z / step;
+        result.orientation.w = ori_w / step;
+
+        output.push_back(result);
+    }
+}
+
+void write_cart(ofstream& os, string classification) {
+    list<Pose>::const_iterator it = cartesian_temp.begin();
+    
+    while (it != cartesian_temp.end()) {
+        os << it->position.x << " " << it->position.y << " " << it->position.z << " "
+           << it->orientation.x << " " << it->orientation.y << " " << it->orientation.z << " " << it->orientation.w << " ";
+        it++;
+    }
+
+    os << classification << endl;
+
 }
 
 /**
@@ -234,6 +313,8 @@ void clear_lists() {
     finger_1_temp.clear();
     finger_2.clear();
     finger_2_temp.clear();
+    cartesian.clear();
+    cartesian_temp.clear();
 }
 
 /**
@@ -248,6 +329,7 @@ void split_lists() {
     split(joint_6, joint_6_temp);
     split(finger_1, finger_1_temp);
     split(finger_2, finger_2_temp);
+    split(cartesian, cartesian_temp);
 }
 
 /**
@@ -263,7 +345,7 @@ bool repeat() {
         return false;
     }
 
-    return true;;
+    return true;
 }
 
 /**
@@ -336,7 +418,7 @@ Dataset::action_list join_lists() {
  * Displays error when incorrect command line args given
  */
 void print_err() {
-    ROS_ERROR("Usage: rosrun lfd_actions knn -d <dataset file>"
+    ROS_ERROR("Usage: rosrun lfd_actions knn -src <dataset file>"
               "\n\t\t\t\t(Optional)\n\t\t\t\t -super <true/false>");
 }
 
@@ -389,6 +471,7 @@ int main(int argc, char** argv) {
 
     // Creating the subscriber
     ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
+    ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 1000, cart_cb);
 
     // Opening ofstream for the dataset
     ofstream os;
@@ -420,9 +503,11 @@ int main(int argc, char** argv) {
         split_lists();
 
         // Perform k-NN on recorded action
-        Dataset::action_list set = join_lists();
-        string guess = data.guess_classification(set);
-        string guess_alt = data.guess_classification_alt(set);
+        //Dataset::action_list set = join_lists();
+       // string guess = data.guess_classification(set);
+        //string guess_alt = data.guess_classification_alt(set);
+        string guess = data.guess_classification_cart(cartesian_temp);
+        
 
         // Print out the guess for the action
         print_guess(guess);
@@ -433,7 +518,17 @@ int main(int argc, char** argv) {
             string label = confirm_guess(guess);
 
             // Printing the lists
-            write_list(os, label);
+            //write_list(os, label);
+            write_cart(os, label);
+
+            /*
+            Dataset::action recorded;
+            recorded.classification = label;
+            recorded.data = set;
+            */
+            Dataset::action_cart recorded;
+            recorded.classification = label;
+            recorded.cartesian = cartesian_temp;
         }
 
         // Clearing the lists

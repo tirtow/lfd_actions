@@ -8,6 +8,7 @@ using std::list;
 using std::vector;
 using std::string;
 using std::map;
+using geometry_msgs::Pose;
 
 Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
     // Looping while not at end of file
@@ -20,6 +21,7 @@ Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
         vector<double> values;
         string classification = split_line(line, values);
 
+/*
         // Building the data_points list
         action_list data_points = build_bin_list(values);
 
@@ -27,8 +29,17 @@ Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
         action ac;
         ac.classification = classification;
         ac.data = data_points;
+        */
 
-        actions.push_back(ac);
+        list<Pose> data = build_bin_list_cart(values);
+        action_cart ac_c;
+        ac_c.classification = classification;
+        ac_c.cartesian = data;
+        
+
+        //actions.push_back(ac);
+        cart_actions.push_back(ac_c);
+
     }
 }
 
@@ -55,6 +66,10 @@ string Dataset::guess_classification(const action_list& action) {
     return get_max_in_map(counts);
 }
 
+void Dataset::add(const action_cart& recorded) {
+    cart_actions.push_back(recorded);
+}
+
 bool Dataset::is_num(char c) {
     return isdigit(c) || c == '.' || c == 'e' || c== '+' || c == '-';
 }
@@ -63,7 +78,7 @@ Dataset::action_list Dataset::build_bin_list(const vector<double>& values) {
     action_list data_points;
 
     // Looping through all the data points
-    for (int i = 0; i < values.size(); i += 3) {
+    for (int i = 0; i < values.size(); i += 10) {
         data_point c;
         c.vel = values[i];
         c.pos = values[i + 1];
@@ -72,6 +87,25 @@ Dataset::action_list Dataset::build_bin_list(const vector<double>& values) {
     }
 
     return data_points;
+}
+
+list<Pose> Dataset::build_bin_list_cart(const vector<double>& values) {
+    list<Pose> result;
+
+    // Looping through all the data points
+    for (int i = 0; i < values.size(); i += 7) {
+        Pose p;
+        p.position.x = values[i];
+        p.position.y = values[i + 1];
+        p.position.z = values[i + 2];
+        p.orientation.x = values[i + 3];
+        p.orientation.y = values[i + 4];
+        p.orientation.z = values[i + 5];
+        p.orientation.w = values[i + 6];
+        result.push_back(p);
+    }
+
+    return result;
 }
 
 string Dataset::split_line(const string& line, vector<double>& values) {
@@ -105,6 +139,68 @@ double Dataset::get_dist(const Dataset::data_point& data,
     double delta_eff = pow(action.eff - data.eff, 2);
 
     return sqrt(delta_vel + delta_pos + delta_eff);
+}
+
+double Dataset::get_dist(const Pose& data, const Pose& action) {
+    double d_pos_x = pow(action.position.x - data.position.x, 2);
+    double d_pos_y = pow(action.position.y - data.position.y, 2);
+    double d_pos_z = pow(action.position.z - data.position.z, 2);
+    double pos_dist = sqrt(d_pos_x + d_pos_y + d_pos_z);
+
+    double d_ori_x = pow(action.orientation.x - data.orientation.x, 2);
+    double d_ori_y = pow(action.orientation.y - data.orientation.y, 2);
+    double d_ori_z = pow(action.orientation.z - data.orientation.z, 2);
+    double d_ori_w = pow(action.orientation.w - data.orientation.w, 2);
+    double pos_orient = sqrt(d_ori_x + d_ori_y + d_ori_z + d_ori_w);
+
+    return pos_dist + pos_orient;
+}
+
+string Dataset::guess_classification_cart(const list<Pose>& recorded) {
+    vector<double> closest_dist;
+    vector<string> closest_str;
+
+    // Looping through each action in the dataset
+    for (cart_cit set_it = cart_actions.begin(); set_it != cart_actions.end(); set_it++) {
+        action_cart current = *set_it;
+        double dist_sum = 0;
+
+        pose_it recorded_it = recorded.begin();
+        // Summing up all the distances for this action
+        for (pose_it it = current.cartesian.begin();
+                it != current.cartesian.end(); it++) {
+            dist_sum += get_dist(*recorded_it++, *it);
+        }
+
+        // Looping through closest data_points to see if need to place
+        bool found = false;
+        vector<double>::iterator dist_it = closest_dist.begin();
+        vector<string>::iterator str_it = closest_str.begin();
+        while (!found && dist_it != closest_dist.end()) {
+            // If smaller distance insert it
+            if (dist_sum < *dist_it) {
+                closest_dist.insert(dist_it, dist_sum);
+                closest_str.insert(str_it, current.classification);
+                found = true;
+            }
+
+            dist_it++;
+            str_it++;
+        }
+
+        if (!found && closest_dist.size() < k) {
+            // Have less than k elements, adding to end
+            closest_dist.push_back(dist_sum);
+            closest_str.push_back(current.classification);
+        } else if (closest_dist.size() > k) {
+            // Have more than k elements, deleting last one
+            closest_dist.pop_back();
+            closest_str.pop_back();
+        }
+    }
+
+    // Returning the string that occurs the most
+    return get_max_in_map(get_counts(closest_str));
 }
 
 string Dataset::guess_classification_alt(const action_list& recorded) {

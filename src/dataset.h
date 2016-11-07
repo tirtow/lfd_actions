@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "geometry_msgs/Pose.h"
 
 /**
  * Class to represent the dataset that the robot uses to classify actions
@@ -38,13 +39,21 @@ class Dataset {
             action_list data;
         };
 
+        struct action_cart {
+            std::string classification;
+            std::list<geometry_msgs::Pose> cartesian;
+        };
+
         // List of actions
         typedef std::list<action> action_set;
+        typedef std::list<action_cart> action_cart_set;
 
         // Defining iterators for the internal values
         typedef action_list::const_iterator data_list_cit;
         typedef labeled_action_list::const_iterator l_data_list_cit;
         typedef action_set::const_iterator data_group_cit;
+        typedef action_cart_set::const_iterator cart_cit;
+        typedef std::list<geometry_msgs::Pose>::const_iterator pose_it;
 
         /**
          * Builds a Dataset given an input stream to a file
@@ -78,12 +87,17 @@ class Dataset {
          */
         std::string guess_classification_alt(const action_list&);
 
+        std::string guess_classification_cart(const std::list<geometry_msgs::Pose>&);
+
+        void add(const action_cart&);
+
     private:
         // The number of neighbors to consider for k-NN
         int k;
 
         // The lists of each action based on classification
         action_set actions;
+        action_cart_set cart_actions;
 
         /**
          * Gets whether or not character is part of a number
@@ -98,6 +112,8 @@ class Dataset {
          * Returns the data_point list that was built
          */
         action_list build_bin_list(const std::vector<double>&);
+
+        std::list<geometry_msgs::Pose> build_bin_list_cart(const std::vector<double>&);
 
         /**
          * Splits a string up into a vector of doubles
@@ -114,6 +130,8 @@ class Dataset {
          * Returns the distance between the two points
          */
         double get_dist(const data_point&, const data_point&);
+
+        double get_dist(const geometry_msgs::Pose&, const geometry_msgs::Pose&);
 
         /**
          * Creates a map of the values in the passed vector to the number of
