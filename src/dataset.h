@@ -76,7 +76,7 @@ class Dataset {
          * to calculate the nearest neighbors
          * Returns the guessed classifaction
          */
-        std::string guess_classification_alt(const data_point&, const action_set&);
+        std::string guess_classification_alt(const action_list&);
 
     private:
         // The number of neighbors to consider for k-NN

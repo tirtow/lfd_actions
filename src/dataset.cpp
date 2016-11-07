@@ -107,19 +107,20 @@ double Dataset::get_dist(const Dataset::data_point& data,
     return sqrt(delta_vel + delta_pos + delta_eff);
 }
 
-string Dataset::guess_classification_alt(const data_point& point, const action_set& set) {
+string Dataset::guess_classification_alt(const action_list& recorded) {
     vector<double> closest_dist;
     vector<string> closest_str;
 
     // Looping through each action in the dataset
-    for (data_group_cit set_it = set.begin(); set_it != set.end(); set_it++) {
+    for (data_group_cit set_it = actions.begin(); set_it != actions.end(); set_it++) {
         action current = *set_it;
         double dist_sum = 0;
 
+        data_list_cit recorded_it = recorded.begin();
         // Summing up all the distances for this action
         for (data_list_cit it = current.data.begin();
                 it != current.data.end(); it++) {
-            dist_sum += get_dist(point, *it);
+            dist_sum += get_dist(*recorded_it++, *it);
         }
 
         // Looping through closest data_points to see if need to place

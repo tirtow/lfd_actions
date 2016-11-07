@@ -422,6 +422,7 @@ int main(int argc, char** argv) {
         // Perform k-NN on recorded action
         Dataset::action_list set = join_lists();
         string guess = data.guess_classification(set);
+        string guess_alt = data.guess_classification_alt(set);
 
         // Print out the guess for the action
         print_guess(guess);
