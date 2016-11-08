@@ -30,6 +30,7 @@ class Dataset {
         };
 
         // List type being used for a Dataset
+        typedef std::list<geometry_msgs::Pose> pose_list;
         typedef std::list<data_point> action_list;
         typedef std::list<labeled_data_point> labeled_action_list;
 
@@ -41,7 +42,7 @@ class Dataset {
 
         struct action_cart {
             std::string classification;
-            std::list<geometry_msgs::Pose> cartesian;
+            pose_list cartesian;
         };
 
         // List of actions
@@ -53,7 +54,7 @@ class Dataset {
         typedef labeled_action_list::const_iterator l_data_list_cit;
         typedef action_set::const_iterator data_group_cit;
         typedef action_cart_set::const_iterator cart_cit;
-        typedef std::list<geometry_msgs::Pose>::const_iterator pose_it;
+        typedef pose_list::const_iterator pose_it;
 
         /**
          * Builds a Dataset given an input stream to a file
@@ -87,7 +88,7 @@ class Dataset {
          */
         std::string guess_classification_alt(const action_list&);
 
-        std::string guess_classification_cart(const std::list<geometry_msgs::Pose>&);
+        std::string guess_classification_cart(const pose_list&);
 
         void add(const action_cart&);
 
@@ -113,7 +114,7 @@ class Dataset {
          */
         action_list build_bin_list(const std::vector<double>&);
 
-        std::list<geometry_msgs::Pose> build_bin_list_cart(const std::vector<double>&);
+        pose_list build_bin_list_cart(const std::vector<double>&);
 
         /**
          * Splits a string up into a vector of doubles
