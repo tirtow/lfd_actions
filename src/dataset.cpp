@@ -17,6 +17,7 @@ Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
         string line;
         getline(is, line);
 
+		if (line != "") {
         // Splitting the line into a vector of doubles
         vector<double> values;
         string classification = split_line(line, values);
@@ -39,13 +40,19 @@ Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
 
         //actions.push_back(ac);
         cart_actions.push_back(ac_c);
+	}
 
     }
 }
 
 void Dataset::print_dataset() {
-    for (data_group_cit it = actions.begin(); it != actions.end(); it++) {
-        print_list(*it);
+    for (cart_cit it = cart_actions.begin(); it != cart_actions.end(); it++) {
+		for (pose_it pit = it->cartesian.begin(); pit != it->cartesian.end(); pit++) {
+			cout << pit->position.x << " " << pit->position.y << " " << pit->position.z << " "
+			     << pit->orientation.x << " " << pit->orientation.y << " " << pit->orientation.z << " " << pit->orientation.w << " ";
+		}
+		
+		cout << it->classification << endl;
     }
 }
 
@@ -157,13 +164,17 @@ double Dataset::get_dist(const Pose& data, const Pose& action) {
 }
 
 string Dataset::guess_classification_cart(const list<Pose>& recorded) {
-    vector<double> closest_dist;
-    vector<string> closest_str;
+    //vector<double> closest_dist;
+    //vector<string> closest_str;
+    double min= 999999999999;
+    string min_str = "none";
 
     // Looping through each action in the dataset
     for (cart_cit set_it = cart_actions.begin(); set_it != cart_actions.end(); set_it++) {
         action_cart current = *set_it;
         double dist_sum = 0;
+
+		ROS_INFO("%s", current.classification.c_str());
 
         pose_it recorded_it = recorded.begin();
         // Summing up all the distances for this action
@@ -172,6 +183,15 @@ string Dataset::guess_classification_cart(const list<Pose>& recorded) {
             dist_sum += get_dist(*recorded_it++, *it);
         }
 
+        if (dist_sum < min) {
+			min = dist_sum;
+			min_str = current.classification;
+		}
+    }
+
+    return min_str;
+
+/*
         // Looping through closest data_points to see if need to place
         bool found = false;
         vector<double>::iterator dist_it = closest_dist.begin();
@@ -200,7 +220,9 @@ string Dataset::guess_classification_cart(const list<Pose>& recorded) {
     }
 
     // Returning the string that occurs the most
-    return get_max_in_map(get_counts(closest_str));
+    //return get_max_in_map(get_counts(closest_str));
+    return closest_str[0];
+*/
 }
 
 string Dataset::guess_classification_alt(const action_list& recorded) {

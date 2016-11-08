@@ -468,6 +468,7 @@ int main(int argc, char** argv) {
     // Building the dataset
     ifstream data_file(dataset_name.c_str());
     Dataset data(data_file, 3);
+    data.print_dataset();
 
     // Creating the subscriber
     ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
@@ -507,6 +508,7 @@ int main(int argc, char** argv) {
        // string guess = data.guess_classification(set);
         //string guess_alt = data.guess_classification_alt(set);
         string guess = data.guess_classification_cart(cartesian_temp);
+	ROS_INFO("%s", guess.c_str());
         
 
         // Print out the guess for the action
