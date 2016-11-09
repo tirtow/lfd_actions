@@ -271,8 +271,14 @@ string Dataset::guess_classification_alt(const action_list& recorded) {
         }
     }
 
-    // Returning the string that occurs the most
-    return get_max_in_map(get_counts(closest_str));
+    string result = get_max_in_map(get_counts(closest_str));
+
+    // Breaking tie if one
+    if (result == "") {
+        return closest_str[0];
+    } else {
+        return result;
+    }
 }
 
 // gen
@@ -374,6 +380,8 @@ string Dataset::get_max_in_map(const map<string, int>& counts) {
         if (it->second > max) {
             max = it->second;
             max_key = it->first;
+        } else if (it->second == max) {
+            max_key = "";
         }
     }
 
