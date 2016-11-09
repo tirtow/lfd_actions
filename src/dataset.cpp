@@ -227,6 +227,7 @@ string Dataset::guess_classification_cart(const list<Pose>& recorded) {
 
     // Breaking tie if one
     if (result == "") {
+	ROS_INFO("tie");
         return closest_str[0];
     } else {
         return result;
