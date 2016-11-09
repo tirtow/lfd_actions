@@ -10,6 +10,7 @@ using std::string;
 using std::map;
 using geometry_msgs::Pose;
 
+// cart
 Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
     // Looping while not at end of file
     while (is) {
@@ -33,19 +34,22 @@ Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
         */
 
             pose_list data = build_bin_list_cart(values);
-            action_cart ac_c;
-            ac_c.classification = classification;
-            ac_c.cartesian = data;
+            cartesian_action ca;
+            ca.classification = classification;
+            ca.cartesian = data;
 
         //actions.push_back(ac);
-            cart_actions.push_back(ac_c);
+            cartesian_actions.push_back(ca);
         }
     }
 }
 
+// cart
 void Dataset::print_dataset() {
-    for (cart_cit it = cart_actions.begin(); it != cart_actions.end(); it++) {
-        for (pose_it pit = it->cartesian.begin(); pit != it->cartesian.end(); pit++) {
+    for (cart_set_cit it = cartesian_actions.begin();
+            it != cartesian_actions.end(); it++) {
+        for (pose_it pit = it->cartesian.begin();
+                pit != it->cartesian.end(); pit++) {
             cout << pit->position.x << " " << pit->position.y << " "
                  << pit->position.z << " " << pit->orientation.x << " "
                  << pit->orientation.y << " " << pit->orientation.z << " "
@@ -56,6 +60,7 @@ void Dataset::print_dataset() {
     }
 }
 
+// indiv
 string Dataset::guess_classification(const action_list& action) {
     int bin = 1;
     map<string, int> counts;
@@ -73,14 +78,17 @@ string Dataset::guess_classification(const action_list& action) {
     return get_max_in_map(counts);
 }
 
-void Dataset::add(const action_cart& recorded) {
-    cart_actions.push_back(recorded);
+// cart
+void Dataset::add(const cartesian_action& recorded) {
+    cartesian_actions.push_back(recorded);
 }
 
+// gen
 bool Dataset::is_num(char c) {
     return isdigit(c) || c == '.' || c == 'e' || c== '+' || c == '-';
 }
 
+// alt
 Dataset::action_list Dataset::build_bin_list(const vector<double>& values) {
     action_list data_points;
 
@@ -96,6 +104,7 @@ Dataset::action_list Dataset::build_bin_list(const vector<double>& values) {
     return data_points;
 }
 
+// cart
 list<Pose> Dataset::build_bin_list_cart(const vector<double>& values) {
     list<Pose> result;
 
@@ -115,6 +124,7 @@ list<Pose> Dataset::build_bin_list_cart(const vector<double>& values) {
     return result;
 }
 
+// gen
 string Dataset::split_line(const string& line, vector<double>& values) {
     // Iterating over entire line
     string::const_iterator begin = line.begin();
@@ -139,6 +149,7 @@ string Dataset::split_line(const string& line, vector<double>& values) {
     return classification;
 }
 
+// indiv/cart
 double Dataset::get_dist(const Dataset::data_point& data,
         const Dataset::data_point& action) {
     double delta_vel = pow(action.vel - data.vel, 2);
@@ -148,30 +159,34 @@ double Dataset::get_dist(const Dataset::data_point& data,
     return sqrt(delta_vel + delta_pos + delta_eff);
 }
 
+// cart
 double Dataset::get_dist(const Pose& data, const Pose& action) {
+    // Calculating the distance between the positions
     double d_pos_x = pow(action.position.x - data.position.x, 2);
     double d_pos_y = pow(action.position.y - data.position.y, 2);
     double d_pos_z = pow(action.position.z - data.position.z, 2);
     double pos_dist = sqrt(d_pos_x + d_pos_y + d_pos_z);
 
+    // Calculating the distance between the orientations
     double d_ori_x = pow(action.orientation.x - data.orientation.x, 2);
     double d_ori_y = pow(action.orientation.y - data.orientation.y, 2);
     double d_ori_z = pow(action.orientation.z - data.orientation.z, 2);
     double d_ori_w = pow(action.orientation.w - data.orientation.w, 2);
     double pos_orient = sqrt(d_ori_x + d_ori_y + d_ori_z + d_ori_w);
 
+    // Returning the sum of the distances
     return pos_dist + pos_orient;
 }
 
+// cart
 string Dataset::guess_classification_cart(const list<Pose>& recorded) {
     vector<double> closest_dist;
     vector<string> closest_str;
-    double min= 999999999999;
-    string min_str = "none";
 
     // Looping through each action in the dataset
-    for (cart_cit set_it = cart_actions.begin(); set_it != cart_actions.end(); set_it++) {
-        action_cart current = *set_it;
+    for (cart_set_cit set_it = cartesian_actions.begin();
+            set_it != cartesian_actions.end(); set_it++) {
+        cartesian_action current = *set_it;
         double dist_sum = 0;
 
         pose_it recorded_it = recorded.begin();
@@ -181,16 +196,6 @@ string Dataset::guess_classification_cart(const list<Pose>& recorded) {
             dist_sum += get_dist(*recorded_it++, *it);
         }
 
-/*
-        if (dist_sum < min) {
-            min = dist_sum;
-            min_str = current.classification;
-        }
-    }
-
-    return min_str;
-
-*/
         // Looping through closest data_points to see if need to place
         bool found = false;
         vector<double>::iterator dist_it = closest_dist.begin();
@@ -218,10 +223,11 @@ string Dataset::guess_classification_cart(const list<Pose>& recorded) {
         }
     }
 
-    // Returning the string that occurs the most
+    // Returning the string that occurs the most often
     return get_max_in_map(get_counts(closest_str));
 }
 
+// alt
 string Dataset::guess_classification_alt(const action_list& recorded) {
     vector<double> closest_dist;
     vector<string> closest_str;
@@ -269,6 +275,7 @@ string Dataset::guess_classification_alt(const action_list& recorded) {
     return get_max_in_map(get_counts(closest_str));
 }
 
+// gen
 map<string, int> Dataset::get_counts(const vector<string>& values) {
     map<string, int> counts;
     for (vector<string>::const_iterator it = values.begin();
@@ -279,6 +286,7 @@ map<string, int> Dataset::get_counts(const vector<string>& values) {
     return counts;
 }
 
+// indiv
 string Dataset::bin_classification(const data_point& point,
         const labeled_action_list& bins) {
     map<int, string> closest;
@@ -326,6 +334,7 @@ string Dataset::bin_classification(const data_point& point,
     return get_max_in_map(counts);
 }
 
+// indiv
 Dataset::labeled_action_list Dataset::get_bin(int joint, int bin,
         const action_set& set) {
     labeled_action_list result;
@@ -355,6 +364,7 @@ Dataset::labeled_action_list Dataset::get_bin(int joint, int bin,
     return result;
 }
 
+// gen
 string Dataset::get_max_in_map(const map<string, int>& counts) {
     int max = 0;
     string max_key;
@@ -370,6 +380,7 @@ string Dataset::get_max_in_map(const map<string, int>& counts) {
     return max_key;
 }
 
+// indiv/alt
 void Dataset::print_list(const action& ac) {
     // Looping through list and printing each data point
     for (data_list_cit it = ac.data.begin(); it != ac.data.end(); it++) {

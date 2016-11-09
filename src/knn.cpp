@@ -29,7 +29,6 @@ const string ARM_TOPIC = "/joint_states";
 const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
 
 list<geometry_msgs::Pose> cartesian;
-list<geometry_msgs::Pose> cartesian_temp;
 
 // lists of joint_states
 Dataset::action_list joint_1;
@@ -131,6 +130,10 @@ void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
     }
 }
 
+/**
+ * Receives the cartesian pose from the arm and pushes to the list
+ * of poses
+ */
 void cart_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
     cartesian.push_back(msg->pose);
 }
@@ -181,7 +184,8 @@ void split(Dataset::action_list& raw_data, Dataset::action_list& output) {
 /**
  * Splits the raw_data into temporal bins into the output
  */
-void split(list<Pose>& raw_data, list<Pose>& output) {
+list<Pose> split(list<Pose>& raw_data) {
+    list<Pose> bins;
     Dataset::action_list::size_type size = raw_data.size();
     int step = std::ceil(size / 10.0);
 
@@ -229,16 +233,19 @@ void split(list<Pose>& raw_data, list<Pose>& output) {
         result.orientation.z = ori_z / step;
         result.orientation.w = ori_w / step;
 
-        output.push_back(result);
+        bins.push_back(result);
     }
+
+    return bins;
 }
 
-void write_cart(ofstream& os, string classification) {
-    list<Pose>::const_iterator it = cartesian_temp.begin();
+void write_cart(ofstream& os, string classification, list<Pose> bins) {
+    list<Pose>::const_iterator it = bins.begin();
     
-    while (it != cartesian_temp.end()) {
+    while (it != bins.end()) {
         os << it->position.x << " " << it->position.y << " " << it->position.z << " "
-           << it->orientation.x << " " << it->orientation.y << " " << it->orientation.z << " " << it->orientation.w << " ";
+           << it->orientation.x << " " << it->orientation.y << " " << it->orientation.z << " "
+           << it->orientation.w << " ";
         it++;
     }
 
@@ -314,7 +321,6 @@ void clear_lists() {
     finger_2.clear();
     finger_2_temp.clear();
     cartesian.clear();
-    cartesian_temp.clear();
 }
 
 /**
@@ -329,7 +335,6 @@ void split_lists() {
     split(joint_6, joint_6_temp);
     split(finger_1, finger_1_temp);
     split(finger_2, finger_2_temp);
-    split(cartesian, cartesian_temp);
 }
 
 /**
@@ -341,11 +346,8 @@ bool repeat() {
     cout << "Again [Y/y]: ";
     cin >> repeat;
     getline(cin, clear);
-    if (repeat != "Y" && repeat != "y") {
-        return false;
-    }
 
-    return true;
+    return repeat == "Y" || repeat == "y";
 }
 
 /**
@@ -419,20 +421,49 @@ Dataset::action_list join_lists() {
  */
 void print_err() {
     ROS_ERROR("Usage: rosrun lfd_actions knn -src <dataset file>"
-              "\n\t\t\t\t(Optional)\n\t\t\t\t -super <true/false>");
+              "\n\t\t\t\t(Optional)\n\t\t\t\t -super <true/false>"
+              "\n\t\t\t\t-p");
+}
+
+/**
+ * Updates the current dataset loaded into the node and prints
+ * the new action to the dataset file
+ */
+void update_dataset(ofstream& os, const Dataset::pose_list& bins, const string& guess) {
+    // Getting the correct label
+    string label = confirm_guess(guess);
+
+    // Printing the lists
+    //write_list(os, label);
+    write_cart(os, label, bins);
+
+    /*
+    Dataset::action recorded;
+    recorded.classification = label;
+    recorded.data = set;
+    */
+    Dataset::cartesian_action recorded;
+    recorded.classification = label;
+    recorded.cartesian = bins;
 }
 
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "arff_recorder");
     ros::NodeHandle n;
+ 
+    // Creating the subscribers
+    ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
+    ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 1000, cart_cb);
 
     // Getting command line arguments
     string dataset_name;
     bool supervised = false;
     bool found_d = false;
+    bool found_p = false;
     for (int i = 1; i < argc; i++) {
         string argv_str(argv[i]);
+        found_p = argv_str == "-p";
         if (argv_str == "-src" || argv_str == "--source") {
             if (i + 1 <= argc) {
                 dataset_name = argv[++i];
@@ -467,12 +498,7 @@ int main(int argc, char** argv) {
 
     // Building the dataset
     ifstream data_file(dataset_name.c_str());
-    Dataset data(data_file, 3);
-    data.print_dataset();
-
-    // Creating the subscriber
-    ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
-    ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 1000, cart_cb);
+    Dataset dataset(data_file, 3);
 
     // Opening ofstream for the dataset
     ofstream os;
@@ -482,6 +508,11 @@ int main(int argc, char** argv) {
         } else {
             os.open(dataset_name.c_str());
         }
+    }
+
+    // Printing the dataset if -p in commandline args
+    if (found_p) {
+        dataset.print_dataset();
     }
 
     bool again = true;
@@ -502,35 +533,20 @@ int main(int argc, char** argv) {
 
         // Put into temporal bins
         split_lists();
+        list<Pose> bins = split(cartesian);
 
         // Perform k-NN on recorded action
         //Dataset::action_list set = join_lists();
        // string guess = data.guess_classification(set);
         //string guess_alt = data.guess_classification_alt(set);
-        string guess = data.guess_classification_cart(cartesian_temp);
-	ROS_INFO("%s", guess.c_str());
-        
+        string guess = dataset.guess_classification_cart(bins);
 
         // Print out the guess for the action
         print_guess(guess);
 
         // If supervised checking guess with user
         if (supervised) {
-            // Getting the correct label
-            string label = confirm_guess(guess);
-
-            // Printing the lists
-            //write_list(os, label);
-            write_cart(os, label);
-
-            /*
-            Dataset::action recorded;
-            recorded.classification = label;
-            recorded.data = set;
-            */
-            Dataset::action_cart recorded;
-            recorded.classification = label;
-            recorded.cartesian = cartesian_temp;
+            update_dataset(os, bins, guess);
         }
 
         // Clearing the lists

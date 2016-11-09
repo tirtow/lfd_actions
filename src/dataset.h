@@ -40,20 +40,20 @@ class Dataset {
             action_list data;
         };
 
-        struct action_cart {
+        struct cartesian_action {
             std::string classification;
             pose_list cartesian;
         };
 
         // List of actions
         typedef std::list<action> action_set;
-        typedef std::list<action_cart> action_cart_set;
+        typedef std::list<cartesian_action> cartesian_set;
 
         // Defining iterators for the internal values
         typedef action_list::const_iterator data_list_cit;
         typedef labeled_action_list::const_iterator l_data_list_cit;
         typedef action_set::const_iterator data_group_cit;
-        typedef action_cart_set::const_iterator cart_cit;
+        typedef cartesian_set::const_iterator cart_set_cit;
         typedef pose_list::const_iterator pose_it;
 
         /**
@@ -88,9 +88,19 @@ class Dataset {
          */
         std::string guess_classification_alt(const action_list&);
 
+        /**
+         * Guess the classification for the given action using k-NN to
+         * get the nearest neighbor using the pose of the end-effector
+         * Sums the differences between each temporal bin to calculate the
+         * k nearest neighbors
+         * Returns the guessed classification
+         */
         std::string guess_classification_cart(const pose_list&);
 
-        void add(const action_cart&);
+        /**
+         * Adds an action_cart to the dataset
+         */
+        void add(const cartesian_action&);
 
     private:
         // The number of neighbors to consider for k-NN
@@ -98,7 +108,7 @@ class Dataset {
 
         // The lists of each action based on classification
         action_set actions;
-        action_cart_set cart_actions;
+        cartesian_set cartesian_actions;
 
         /**
          * Gets whether or not character is part of a number
@@ -114,6 +124,12 @@ class Dataset {
          */
         action_list build_bin_list(const std::vector<double>&);
 
+        /**
+         * Builds the list of poses given a vector of values
+         * The values are stored as position x y z orientation x y z w
+         * for each temporal bin followed by the classification for that action
+         * Returns the built pose list
+         */
         pose_list build_bin_list_cart(const std::vector<double>&);
 
         /**
@@ -132,6 +148,12 @@ class Dataset {
          */
         double get_dist(const data_point&, const data_point&);
 
+        /**
+         * Gets the distance between two poses by calculating the distance
+         * between the positions and adding that to the distance between the
+         * orientations
+         * Returns the summed distance
+         */
         double get_dist(const geometry_msgs::Pose&, const geometry_msgs::Pose&);
 
         /**
