@@ -223,8 +223,14 @@ string Dataset::guess_classification_cart(const list<Pose>& recorded) {
         }
     }
 
-    // Returning the string that occurs the most often
-    return get_max_in_map(get_counts(closest_str));
+    string result = get_max_in_map(get_counts(closest_str));
+
+    // Breaking tie if one
+    if (result == "") {
+        return closest_str[0];
+    } else {
+        return result;
+    }
 }
 
 // alt
