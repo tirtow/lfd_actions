@@ -429,7 +429,7 @@ void print_err() {
  * Updates the current dataset loaded into the node and prints
  * the new action to the dataset file
  */
-void update_dataset(ofstream& os, const Dataset::pose_list& bins, const string& guess) {
+void update_dataset(Dataset& dataset, ofstream& os, const Dataset::pose_list& bins, const string& guess) {
     // Getting the correct label
     string label = confirm_guess(guess);
 
@@ -445,6 +445,7 @@ void update_dataset(ofstream& os, const Dataset::pose_list& bins, const string& 
     Dataset::cartesian_action recorded;
     recorded.classification = label;
     recorded.cartesian = bins;
+    dataset.add(recorded);
 }
 
 int main(int argc, char** argv) {
@@ -546,7 +547,7 @@ int main(int argc, char** argv) {
 
         // If supervised checking guess with user
         if (supervised) {
-            update_dataset(os, bins, guess);
+            update_dataset(dataset, os, bins, guess);
         }
 
         // Clearing the lists
