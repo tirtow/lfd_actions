@@ -211,22 +211,15 @@ double Dataset::get_dist(const Dataset::data_point& data,
 }
 
 // cart
-double Dataset::get_dist(const Pose& data, const Pose& action) {
+double Dataset::get_pos_dist(const Position& data, const Position& action) {
     // Calculating the distance between the positions
-    double d_pos_x = pow(action.position.x - data.position.x, 2);
-    double d_pos_y = pow(action.position.y - data.position.y, 2);
-    double d_pos_z = pow(action.position.z - data.position.z, 2);
-    double pos_dist = sqrt(d_pos_x + d_pos_y + d_pos_z);
-
-    // Calculating the distance between the orientations
-    double d_ori_x = pow(action.orientation.x - data.orientation.x, 2);
-    double d_ori_y = pow(action.orientation.y - data.orientation.y, 2);
-    double d_ori_z = pow(action.orientation.z - data.orientation.z, 2);
-    double d_ori_w = pow(action.orientation.w - data.orientation.w, 2);
-    double pos_orient = sqrt(d_ori_x + d_ori_y + d_ori_z + d_ori_w);
+    double dx = pow(action.position.x - data.position.x, 2);
+    double dy = pow(action.position.y - data.position.y, 2);
+    double dz = pow(action.position.z - data.position.z, 2);
+    double dist = sqrt(dx + dy + dz);
 
     // Returning the sum of the distances
-    return pos_dist + pos_orient;
+    return dist
 }
 
 // cart
