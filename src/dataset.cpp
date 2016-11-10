@@ -23,6 +23,17 @@ Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
             vector<double> values;
             string classification = split_line(line, values);
 
+            // Building the action from the line
+            vec_it it = values.begin();
+            action ac;
+            ac.label = classification;
+            ac.data.joints = build_joint_list(it);
+            ac.data.pose = build_pose(it);
+
+            // Pushing to the list of actions
+            action_set.push_back(ac);
+
+// old
 /*
         // Building the data_points list
         action_list data_points = build_bin_list(values);
@@ -33,6 +44,8 @@ Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
         ac.data = data_points;
         */
 
+// cartesian
+/*
             pose_list data = build_bin_list_cart(values);
             cartesian_action ca;
             ca.classification = classification;
@@ -40,6 +53,7 @@ Dataset::Dataset(ifstream& is, int k_val = 1) : k(k_val) {
 
         //actions.push_back(ac);
             cartesian_actions.push_back(ca);
+            */
         }
     }
 }
@@ -83,6 +97,10 @@ void Dataset::add(const cartesian_action& recorded) {
     cartesian_actions.push_back(recorded);
 }
 
+void Dataset::add(const action& recorded) {
+    actions.push_back(recorded);
+}
+
 // gen
 bool Dataset::is_num(char c) {
     return isdigit(c) || c == '.' || c == 'e' || c== '+' || c == '-';
@@ -122,6 +140,39 @@ list<Pose> Dataset::build_bin_list_cart(const vector<double>& values) {
     }
 
     return result;
+}
+
+Dataset::joint_list Dataset::build_joint_list(vec_it& it) {
+    const int NUM_VALUES = 240;
+    joint_list joints;
+
+    // Looping to get all the joints
+    for (int i = 0; i < NUM_VALUES; i += 10) {
+        joint_state js;
+        js.vel = values[it];
+        js.pos = values[++it];
+        js.eff = values[++it];
+        joints.push_back(js);
+    }
+
+    return joints;
+}
+
+Pose build_pose(vec_it& it) {
+    Pose pose;
+    
+    // Getting the position
+    pose.position.x = it;
+    pose.position.y = ++it;
+    pose.position.z = ++it;
+
+    // Getting the orientation
+    pose.orientation.x = ++it;
+    pose.orientation.y = ++it;
+    pose.orientation.z = ++it;
+    pose.orientation.w = ++it;
+
+    return pose;
 }
 
 // gen

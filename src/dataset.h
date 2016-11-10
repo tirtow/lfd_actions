@@ -16,7 +16,39 @@
  */
 class Dataset {
     public:
+        // Struct for the joint_states for a temporal bin
+        struct joint_state {
+            double vel;
+            double pos;
+            double eff;
+        };
+
+        // Struct for a bin of an action
+        struct bin {
+            std::list<joint_state> joints;
+            geometry_msgs::Pose pose;
+        };
+
+        // Struct for the label and data for an action
+        struct action {
+            std::string label;
+            std::list<bin> data;
+        };
+
+        // List types
+        typedef std::list<joint_state> joint_list;
+        typedef std::list<geometry_msgs::Pose> pose_list;
+        typedef std::list<bin> bin_list;
+        typedef std::list<action> action_list;
+
+        // List iterator types
+        typedef joint_list::const_iterator joint_it;
+        typedef pose_list::const_iteator pose_it;
+        typedef bin_list::const_iterator bin_it;
+        typedef action_list::const_iterator action_it;
+
         // Struct for the data points for each temporal bin
+        /*
         struct data_point {
             double vel;
             double pos;
@@ -30,12 +62,10 @@ class Dataset {
         };
 
         // List type being used for a Dataset
-        typedef std::list<geometry_msgs::Pose> pose_list;
-        typedef std::list<data_point> action_list;
         typedef std::list<labeled_data_point> labeled_action_list;
 
         // Struct for the list of data for an action
-        struct action {
+        struct action_old {
             std::string classification;
             action_list data;
         };
@@ -55,6 +85,7 @@ class Dataset {
         typedef action_set::const_iterator data_group_cit;
         typedef cartesian_set::const_iterator cart_set_cit;
         typedef pose_list::const_iterator pose_it;
+        */
 
         /**
          * Builds a Dataset given an input stream to a file
@@ -102,13 +133,20 @@ class Dataset {
          */
         void add(const cartesian_action&);
 
+        void add(const action&);
+
     private:
+        std::vector<double>::const_iterator vec_it;
+
         // The number of neighbors to consider for k-NN
         int k;
 
         // The lists of each action based on classification
         action_set actions;
         cartesian_set cartesian_actions;
+
+        // The list of actions that makes up the dataset
+        action_list action_set;
 
         /**
          * Gets whether or not character is part of a number
@@ -131,6 +169,10 @@ class Dataset {
          * Returns the built pose list
          */
         pose_list build_bin_list_cart(const std::vector<double>&);
+
+        joint_list build_joint_list(vec_it&);
+
+        Pose build_pose(vec_it&);
 
         /**
          * Splits a string up into a vector of doubles
