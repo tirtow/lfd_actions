@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "geometry_msgs/Pose.h"
+#include "geometry_msgs/Point.h"
 
 /**
  * Class to represent the dataset that the robot uses to classify actions
@@ -25,67 +26,27 @@ class Dataset {
 
         // Struct for a bin of an action
         struct bin {
-            std::list<joint_state> joints;
+            std::vector<joint_state> joints;
             geometry_msgs::Pose pose;
         };
 
         // Struct for the label and data for an action
         struct action {
             std::string label;
-            std::list<bin> data;
+            std::vector<bin> data;
         };
 
         // List types
-        typedef std::list<joint_state> joint_list;
-        typedef std::list<geometry_msgs::Pose> pose_list;
-        typedef std::list<bin> bin_list;
-        typedef std::list<action> action_list;
+        typedef std::vector<joint_state> joint_list;
+        typedef std::vector<geometry_msgs::Pose> pose_list;
+        typedef std::vector<bin> bin_list;
+        typedef std::vector<action> action_list;
 
         // List iterator types
-        typedef joint_list::const_iterator joint_it;
-        typedef pose_list::const_iteator pose_it;
-        typedef bin_list::const_iterator bin_it;
-        typedef action_list::const_iterator action_it;
-
-        // Struct for the data points for each temporal bin
-        /*
-        struct data_point {
-            double vel;
-            double pos;
-            double eff;
-        };
-
-        // Struct for the data points with a label for the classification
-        struct labeled_data_point {
-            std::string label;
-            data_point data;
-        };
-
-        // List type being used for a Dataset
-        typedef std::list<labeled_data_point> labeled_action_list;
-
-        // Struct for the list of data for an action
-        struct action_old {
-            std::string classification;
-            action_list data;
-        };
-
-        struct cartesian_action {
-            std::string classification;
-            pose_list cartesian;
-        };
-
-        // List of actions
-        typedef std::list<action> action_set;
-        typedef std::list<cartesian_action> cartesian_set;
-
-        // Defining iterators for the internal values
-        typedef action_list::const_iterator data_list_cit;
-        typedef labeled_action_list::const_iterator l_data_list_cit;
-        typedef action_set::const_iterator data_group_cit;
-        typedef cartesian_set::const_iterator cart_set_cit;
-        typedef pose_list::const_iterator pose_it;
-        */
+        typedef joint_list::const_iterator joint_cit;
+        typedef pose_list::const_iterator pose_cit;
+        typedef bin_list::const_iterator bin_cit;
+        typedef action_list::const_iterator action_cit;
 
         /**
          * Builds a Dataset given an input stream to a file
@@ -95,29 +56,12 @@ class Dataset {
          * Takes an int for the number of nearest neighbors (k) to consider in
          * the k-NN classification
          */
-        Dataset(std::ifstream&, int);
+        Dataset(const std::string&, int);
 
         /**
-         * Prints out each actions data_points and classification to the
-         * standard output stream
+         * Destructor to close the ofstream used to write
          */
-        void print_dataset();
-
-        /**
-         * Guesses the classification for the given action using k-NN to
-         * get the nearest neighbor for each temporal bin
-         * Returns the guessed classifaction
-         */
-        std::string guess_classification(const action_list&);
-
-        /**
-         * Guesses the classification for the given action using k-NN to
-         * get the nearest neighbor for each temporal bin
-         * Sums the differences between each of the data_points and uses that
-         * to calculate the nearest neighbors
-         * Returns the guessed classifaction
-         */
-        std::string guess_classification_alt(const action_list&);
+        ~Dataset();
 
         /**
          * Guess the classification for the given action using k-NN to
@@ -129,38 +73,39 @@ class Dataset {
         std::string guess_classification_cart(const pose_list&);
 
         /**
-         * Adds an action_cart to the dataset
+         * Updates the dataset by adding the action to the working dataset
+         * and adding it to the dataset file
          */
-        void add(const cartesian_action&);
-
-        void add(const action&);
+        void update(const action&);
 
     private:
-        std::vector<double>::const_iterator vec_it;
+        // Iterator for a vector of doubles
+        typedef std::vector<double>::const_iterator vec_it;
 
         // The number of neighbors to consider for k-NN
         int k;
 
-        // The lists of each action based on classification
-        action_set actions;
-        cartesian_set cartesian_actions;
+        // The output file stream for the dataset
+        std::ofstream os;
 
         // The list of actions that makes up the dataset
         action_list action_set;
+
+        /**
+         * Adds an action to the working dataset
+         */
+        void add(const action&);
+
+        /**
+         * Prints out the pose position and orientation
+         */
+        void print_pose(std::ofstream&, const geometry_msgs::Pose&);
 
         /**
          * Gets whether or not character is part of a number
          * Returns true if character is a digit or '.', false otherwise
          */
         bool is_num(char);
-
-        /**
-         * Builds a data_point list from a vector with all the values
-         * The values are stored velocity, position, effort for each bin
-         * with all bins for time step 1 then followed by time step 2, etc
-         * Returns the data_point list that was built
-         */
-        action_list build_bin_list(const std::vector<double>&);
 
         /**
          * Builds the list of poses given a vector of values
@@ -170,9 +115,26 @@ class Dataset {
          */
         pose_list build_bin_list_cart(const std::vector<double>&);
 
-        joint_list build_joint_list(vec_it&);
+        /**
+         * Builds the action given the line from the dataset
+         * The values are stored velocity, position, effort for each bin
+         * with all bins for time step 1 followed by the cartesian position x
+         * y z and orientation x y z w followed by the time step 2, etc
+         * Returns the built action
+         */
+        action build_action(const std::string&);
 
-        Pose build_pose(vec_it&);
+        /**
+         * Gets the joint_state from the vector
+         * Returns the joint_state
+         */
+        joint_state get_joint_state(const std::vector<double>&, int);
+
+        /**
+         * Gets the pose from the vector
+         * Returns the pose
+         */
+        geometry_msgs::Pose get_pose(const std::vector<double>&, int);
 
         /**
          * Splits a string up into a vector of doubles
@@ -196,7 +158,7 @@ class Dataset {
          * orientations
          * Returns the summed distance
          */
-        double get_dist(const geometry_msgs::Pose&, const geometry_msgs::Pose&);
+        double get_pos_dist(const geometry_msgs::Point&, const geometry_msgs::Point&);
 
         /**
          * Creates a map of the values in the passed vector to the number of
@@ -206,30 +168,10 @@ class Dataset {
         std::map<std::string, int> get_counts(const std::vector<std::string>&);
 
         /**
-         * Gets the classification for the passed data_point based on the other
-         * data_points from actions in the dataset from the same temporal bin
-         * Returns the name of the classification based on the one temporal bin
-         */
-        std::string bin_classification(const data_point&, const labeled_action_list&);
-
-        /**
-         * Gets the data_points from an action_set from the specified joint and
-         * temporal bin
-         * Returns a labeled_action_list of data_points for a single joint
-         * and time
-         */
-        labeled_action_list get_bin(int, int, const action_set&);
-
-        /**
          * Gets the key to the maximum value in a map of strings to ints
          * Returns the key with the max value
          */
         std::string get_max_in_map(const std::map<std::string, int>&);
-
-        /**
-         * Prints out one of the action's data points and it's classification
-         */
-        void print_list(const action&);
 
 };
 

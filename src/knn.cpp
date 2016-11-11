@@ -1,54 +1,36 @@
 #include <ros/ros.h>
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <vector>
-#include <list>
 #include <termios.h>
-#include <cmath>
-#include <climits>
-#include "sensor_msgs/JointState.h"
 #include "dataset.h"
-#include "dataset.cpp" 
+#include "dataset.cpp"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Pose.h"
+#include "sensor_msgs/JointState.h"
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+
+#define NUM_JOINTS 8
+#define NUM_BINS 10
 
 using std::string;
 using std::cin;
 using std::cout;
 using std::endl;
 using std::istream;
-using std::ifstream;
-using std::ofstream;
 using std::vector;
-using std::list;
 using geometry_msgs::Pose;
+using geometry_msgs::PoseStamped;
+using sensor_msgs::JointState;
 
 // The topic the arm joints publish to
 const string ARM_TOPIC = "/joint_states";
 const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
 
-list<geometry_msgs::Pose> cartesian;
-
-// lists of joint_states
-Dataset::action_list joint_1;
-Dataset::action_list joint_2;
-Dataset::action_list joint_3;
-Dataset::action_list joint_4;
-Dataset::action_list joint_5;
-Dataset::action_list joint_6;
-Dataset::action_list finger_1;
-Dataset::action_list finger_2;
-
-// lists of temporal bins for the coord
-Dataset::action_list joint_1_temp;
-Dataset::action_list joint_2_temp;
-Dataset::action_list joint_3_temp;
-Dataset::action_list joint_4_temp;
-Dataset::action_list joint_5_temp;
-Dataset::action_list joint_6_temp;
-Dataset::action_list finger_1_temp;
-Dataset::action_list finger_2_temp;
+// Vectors used to record the action in callback
+vector<Pose> cartesian;
+Dataset::joint_list joints;
 
 /**
  * Reads a character without blocking execution
@@ -79,262 +61,84 @@ int getch() {
 }
 
 /**
- * Records the recieved data into the map of joint names to the joint states
+ * Splits the joints into the temporal bins
+ * Sums up the velocities, positions, and efforts and divides by the
+ * number of bins
+ * Returns a joint_list that contains the bins for each joint
  */
-void arm_cb(const sensor_msgs::JointState::ConstPtr& msg) {
-    vector<string> names = msg->name;
+Dataset::joint_list split_bins() {
+    Dataset::joint_list bins;
+    int bin_length = (joints.size() / NUM_JOINTS) / NUM_BINS;
 
-    // Checking that received the appropriate number of joints
-    if (names.size() == 8) {
-        // Getting the positions, velocities, and efforts
-        vector<double> positions = msg->position;
-        vector<double> velocities = msg->velocity;
-        vector<double> efforts = msg->effort;
+    // Looping through the number of bins
+    for (int bin = 0; bin < NUM_BINS; bin++) {
+        Dataset::joint_list sums;
 
-        // Looping through each joint
-        for (int i = 0; i < names.size(); i++) {
-            // Creating a coord for the joint
-            Dataset::data_point state;
-            state.pos = positions[i];
-            state.vel = velocities[i];
-            state.vel = efforts[i];
+        // Getting an iterator to the start of the bin
+        int start = bin * bin_length;
+        Dataset::joint_cit it = joints.begin();
+        for (int i = 0; i < start; i++) {
+            it++;
+        }
 
-            // Pushing the coord to the appropriate list
-            switch (i) {
-            case 0:
-                joint_1.push_back(state);
-                break;
-            case 1:
-                joint_2.push_back(state);
-                break;
-            case 2:
-                joint_3.push_back(state);
-                break;
-            case 3:
-                joint_4.push_back(state);
-                break;
-            case 4:
-                joint_5.push_back(state);
-                break;
-            case 5:
-                joint_6.push_back(state);
-                break;
-            case 6:
-                finger_1.push_back(state);
-                break;
-            case 7:
-                finger_2.push_back(state);
-                break;
+        // Summing up the velocity, position, and effort for each joint
+        for (int raw_index = bin * bin_length; raw_index < bin_length; raw_index++) {
+            for (int sum_index = 0; sum_index < NUM_JOINTS; sum_index++) {
+                sums[sum_index].vel += joints[raw_index].vel;
+                sums[sum_index].pos += joints[raw_index].pos;
+                sums[sum_index].eff += joints[raw_index].eff;
             }
         }
-    }
-}
 
-/**
- * Receives the cartesian pose from the arm and pushes to the list
- * of poses
- */
-void cart_cb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
-    cartesian.push_back(msg->pose);
-}
+        // Getting the averages and pushing
+        for (int i = 0; i < NUM_JOINTS; i++) {
+            sums[i].vel /= NUM_BINS;
+            sums[i].pos /= NUM_BINS;
+            sums[i].eff /= NUM_BINS;
 
-/**
- * Splits the raw_data into temporal bins into the output
- */
-void split(Dataset::action_list& raw_data, Dataset::action_list& output) {
-    Dataset::action_list::size_type size = raw_data.size();
-    int step = std::ceil(size / 10.0);
-
-    // Splitting the list into 10 sets and looping through each set
-    for (Dataset::action_list::size_type start = 0; start < raw_data.size();
-            start += step) {
-        double pos_sum = 0;
-        double vel_sum = 0;
-        double eff_sum = 0;
-
-        // Moving it to the beginning of the set
-        Dataset::data_list_cit it = raw_data.begin();
-        for (int i = 0; i < start; i++) {
-            it++;
+            bins.push_back(sums[i]);
         }
-
-        // Moving stop to the end of the set
-        Dataset::data_list_cit stop = it;
-        for (int i = 0; i < step; i++) {
-            stop++;
-        }
-
-        // Summing the positions, velocities, and efforts for the set
-        while (it != stop && it != raw_data.end()) {
-            pos_sum += it->pos;
-            vel_sum += it->vel;
-            eff_sum += it->eff;
-            it++;
-        }
-
-        // Creating the coord for the temporal bin and pushing to the result list
-        Dataset::data_point result;
-        result.pos = pos_sum / step;
-        result.vel = vel_sum / step;
-        result.eff = eff_sum / step;
-        output.push_back(result);
-    }
-}
-
-/**
- * Splits the raw_data into temporal bins into the output
- */
-list<Pose> split(list<Pose>& raw_data) {
-    list<Pose> bins;
-    Dataset::action_list::size_type size = raw_data.size();
-    int step = std::ceil(size / 10.0);
-
-    // Splitting the list into 10 sets and looping through each set
-    for (Dataset::action_list::size_type start = 0; start < raw_data.size();
-            start += step) {
-        double pos_x = 0;
-        double pos_y = 0;
-        double pos_z = 0;
-        double ori_x = 0;
-        double ori_y = 0;
-        double ori_z = 0;
-        double ori_w = 0;
-
-        // Moving it to the beginning of the set
-        list<Pose>::const_iterator it = raw_data.begin();
-        for (int i = 0; i < start; i++) {
-            it++;
-        }
-
-        // Moving stop to the end of the set
-        list<Pose>::const_iterator stop = it;
-        for (int i = 0; i < step; i++) {
-            stop++;
-        }
-
-        // Summing the positions, velocities, and efforts for the set
-        while (it != stop && it != raw_data.end()) {
-            pos_x += it->position.x;
-            pos_y += it->position.y;
-            pos_z += it->position.z;
-            ori_x += it->orientation.z;
-            ori_y += it->orientation.z;
-            ori_z += it->orientation.z;
-            ori_w += it->orientation.z;
-            it++;
-        }
-
-        Pose result;
-        result.position.x = pos_x / step;
-        result.position.y = pos_y / step;
-        result.position.z = pos_z / step;
-        result.orientation.x = ori_x / step;
-        result.orientation.y = ori_y / step;
-        result.orientation.z = ori_z / step;
-        result.orientation.w = ori_w / step;
-
-        bins.push_back(result);
     }
 
     return bins;
 }
 
-void write_cart(ofstream& os, string classification, list<Pose> bins) {
-    list<Pose>::const_iterator it = bins.begin();
-    
-    while (it != bins.end()) {
-        os << it->position.x << " " << it->position.y << " " << it->position.z << " "
-           << it->orientation.x << " " << it->orientation.y << " " << it->orientation.z << " "
-           << it->orientation.w << " ";
-        it++;
+/**
+ * Builds the temporal bin specified by the bin_num
+ * Gets the pose for the bin and the joint_states for the bin
+ * Returns a bin with the appropriate pose and joint_states
+ */
+Dataset::bin build_bin(int bin_num, const Dataset::joint_list& joint_bins) {
+    Dataset::bin bin;
+
+    // Getting the pose
+    bin.pose = cartesian[bin_num];
+
+    // Getting the joint_set_list
+    int offset = bin_num * NUM_BINS;
+    for (int i = 0; i < NUM_JOINTS; i++) {
+        bin.joints.push_back(joints[i + offset]);
     }
 
-    os << classification << endl;
-
+    return bin;
 }
 
 /**
- * Writes the temporal bins for each joint and the classification for the action
- * Writes j1.vel j1.pos j1.eff j2.vel... for each temporal bin
+ * Builds the action from the joint_bins
+ * Sets the label to an empty string as the label for the action has not
+ * been determined
+ * Returns the new action
  */
-void write_list(ofstream& os, string classification) {
-    Dataset::data_list_cit j1 = joint_1_temp.begin();
-    Dataset::data_list_cit j2 = joint_2_temp.begin();
-    Dataset::data_list_cit j3 = joint_3_temp.begin();
-    Dataset::data_list_cit j4 = joint_4_temp.begin();
-    Dataset::data_list_cit j5 = joint_5_temp.begin();
-    Dataset::data_list_cit j6 = joint_6_temp.begin();
-    Dataset::data_list_cit f1 = finger_1_temp.begin();
-    Dataset::data_list_cit f2 = finger_2_temp.begin();
+Dataset::action build_action(const Dataset::joint_list& joint_bins) {
+    Dataset::action ac;
+    ac.label = "";
 
-    // Printing the temporal bins
-    for (int i = 0; i < 10; i++) {
-        os << j1->vel << " " << j1->pos << " " << j1->eff << " ";
-        os << j2->vel << " " << j2->pos << " " << j2->eff << " ";
-        os << j3->vel << " " << j3->pos << " " << j3->eff << " ";
-        os << j4->vel << " " << j4->pos << " " << j4->eff << " ";
-        os << j5->vel << " " << j5->pos << " " << j5->eff << " ";
-        os << j6->vel << " " << j6->pos << " " << j6->eff << " ";
-        os << f1->vel << " " << f1->pos << " " << f1->eff << " ";
-        os << f2->vel << " " << f2->pos << " " << f2->eff << " ";
-        j1++;
-        j2++;
-        j3++;
-        j4++;
-        j5++;
-        j6++;
-        f1++;
-        f2++;
+    // Building the bins
+    for (int bin = 0; bin < NUM_BINS; bin++) {
+        ac.data.push_back(build_bin(bin, joint_bins));
     }
 
-    // Printing the classification
-    os << classification << endl;
-}
-
-/**
- * Checks if the passed filename is the name of a file that exists
- * Returns true if the file exists, false otherwise
- */
-bool file_exists(const string& name) {
-    std::ifstream f(name.c_str());
-    return f.good();
-}
-
-/**
- * Clears the lists for the joints and the temporal bins for each joint
- */
-void clear_lists() {
-    joint_1.clear();
-    joint_1_temp.clear();
-    joint_2.clear();
-    joint_2_temp.clear();
-    joint_3.clear();
-    joint_3_temp.clear();
-    joint_4.clear();
-    joint_4_temp.clear();
-    joint_5.clear();
-    joint_5_temp.clear();
-    joint_6.clear();
-    joint_6_temp.clear();
-    finger_1.clear();
-    finger_1_temp.clear();
-    finger_2.clear();
-    finger_2_temp.clear();
-    cartesian.clear();
-}
-
-/**
- * Calls split for each of the joints to create the temporal bins
- */
-void split_lists() {
-    split(joint_1, joint_1_temp);
-    split(joint_2, joint_2_temp);
-    split(joint_3, joint_3_temp);
-    split(joint_4, joint_4_temp);
-    split(joint_5, joint_5_temp);
-    split(joint_6, joint_6_temp);
-    split(finger_1, finger_1_temp);
-    split(finger_2, finger_2_temp);
+    return ac;
 }
 
 /**
@@ -379,44 +183,6 @@ string confirm_guess(const string& guess) {
 }
 
 /**
- * Joins the lists of temporal bins into one list
- */
-Dataset::action_list join_lists() {
-    Dataset::action_list result;
-
-    Dataset::data_list_cit j1 = joint_1_temp.begin();
-    Dataset::data_list_cit j2 = joint_2_temp.begin();
-    Dataset::data_list_cit j3 = joint_3_temp.begin();
-    Dataset::data_list_cit j4 = joint_4_temp.begin();
-    Dataset::data_list_cit j5 = joint_5_temp.begin();
-    Dataset::data_list_cit j6 = joint_6_temp.begin();
-    Dataset::data_list_cit f1 = finger_1_temp.begin();
-    Dataset::data_list_cit f2 = finger_2_temp.begin();
-
-    // Printing the temporal bins
-    for (int i = 0; i < 10; i++) {
-        result.push_back(*j1);
-        result.push_back(*j2);
-        result.push_back(*j3);
-        result.push_back(*j4);
-        result.push_back(*j5);
-        result.push_back(*j6);
-        result.push_back(*f1);
-        result.push_back(*f2);
-        j1++;
-        j2++;
-        j3++;
-        j4++;
-        j5++;
-        j6++;
-        f1++;
-        f2++;
-    }
-
-    return result;
-}
-
-/**
  * Displays error when incorrect command line args given
  */
 void print_err() {
@@ -425,37 +191,44 @@ void print_err() {
               "\n\t\t\t\t-p");
 }
 
-/**
- * Updates the current dataset loaded into the node and prints
- * the new action to the dataset file
- */
-void update_dataset(Dataset& dataset, ofstream& os, const Dataset::pose_list& bins, const string& guess) {
-    // Getting the correct label
-    string label = confirm_guess(guess);
+void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& cart) {
+    // Pushing the joint states
+    vector<string> names = joint->name;
+    // Checking that received the appropriate number of joints
+    if (names.size() == 8) {
+        // Getting the positions, velocities, and efforts
+        vector<double> positions = joint->position;
+        vector<double> velocities = joint->velocity;
+        vector<double> efforts = joint->effort;
 
-    // Printing the lists
-    //write_list(os, label);
-    write_cart(os, label, bins);
+        // Looping through each joint
+        for (int i = 0; i < names.size(); i++) {
+            // Creating a joint_state for the joint
+            Dataset::joint_state state;
+            state.pos = positions[i];
+            state.vel = velocities[i];
+            state.vel = efforts[i];
 
-    /*
-    Dataset::action recorded;
-    recorded.classification = label;
-    recorded.data = set;
-    */
-    Dataset::cartesian_action recorded;
-    recorded.classification = label;
-    recorded.cartesian = bins;
-    dataset.add(recorded);
+            // Pushing to the joints list
+            joints.push_back(state);
+        }
+    }
+
+    // Pushing the cartesian pose
+    cartesian.push_back(cart->pose);
 }
 
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "arff_recorder");
     ros::NodeHandle n;
- 
+
     // Creating the subscribers
-    ros::Subscriber arm_sub = n.subscribe(ARM_TOPIC, 1000, arm_cb);
-    ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 1000, cart_cb);
+    message_filters::Subscriber<JointState> arm_sub(n, ARM_TOPIC, 1000);
+    message_filters::Subscriber<PoseStamped> cart_sub(n, CART_TOPIC, 1000);
+    message_filters::TimeSynchronizer<JointState, PoseStamped> sync(
+            arm_sub, cart_sub, 1000);
+    sync.registerCallback(boost::bind(&callback, _1, _2));
 
     // Getting command line arguments
     string dataset_name;
@@ -498,26 +271,19 @@ int main(int argc, char** argv) {
     }
 
     // Building the dataset
-    ifstream data_file(dataset_name.c_str());
-    Dataset dataset(data_file, 3);
-
-    // Opening ofstream for the dataset
-    ofstream os;
-    if (supervised) {
-        if (file_exists(dataset_name)) {
-            os.open(dataset_name.c_str(), std::ios_base::app);
-        } else {
-            os.open(dataset_name.c_str());
-        }
-    }
+    Dataset dataset(dataset_name, 3);
 
     // Printing the dataset if -p in commandline args
     if (found_p) {
-        dataset.print_dataset();
+        //dataset.print_dataset();
     }
 
     bool again = true;
     while (again) {
+        // Clearing the vectors
+        cartesian.clear();
+        joints.clear();
+
         // Waiting to record
         cout << "Press [Enter] to start";
         cin.ignore();
@@ -532,32 +298,25 @@ int main(int argc, char** argv) {
         }
         cout << endl;
 
-        // Put into temporal bins
-        split_lists();
-        list<Pose> bins = split(cartesian);
+        // Creating the recorded action
+        Dataset::joint_list bins = split_bins();
+        Dataset::action ac = build_action(bins);
 
-        // Perform k-NN on recorded action
-        //Dataset::action_list set = join_lists();
-       // string guess = data.guess_classification(set);
-        //string guess_alt = data.guess_classification_alt(set);
-        string guess = dataset.guess_classification_cart(bins);
+        // Guessing the classification
+        string guess = dataset.guess_classification(ac);
 
         // Print out the guess for the action
         print_guess(guess);
 
         // If supervised checking guess with user
         if (supervised) {
-            update_dataset(dataset, os, bins, guess);
+            ac.label = confirm_guess(guess);
+            dataset.update(ac);
         }
-
-        // Clearing the lists
-        clear_lists();
 
         // Getting whether or not to record another action
         again = repeat();
     }
-
-    os.close();
 
     return 0;
 }
