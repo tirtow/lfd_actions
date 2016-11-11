@@ -150,7 +150,7 @@ class Dataset {
          * Pythagorean theorum to three points
          * Returns the distance between the two points
          */
-        double get_dist(const data_point&, const data_point&);
+        double get_dist(const joint_state&, const joint_state&);
 
         /**
          * Gets the distance between two poses by calculating the distance

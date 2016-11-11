@@ -153,13 +153,12 @@ string Dataset::split_line(const string& line, vector<double>& values) {
 }
 
 // indiv/cart
-double Dataset::get_dist(const Dataset::data_point& data,
-        const Dataset::data_point& action) {
-    double delta_vel = pow(action.vel - data.vel, 2);
-    double delta_pos = pow(action.pos - data.pos, 2);
-    double delta_eff = pow(action.eff - data.eff, 2);
+double Dataset::get_dist(const joint_state& data, const joint_state& recorded) {
+    double dvel = pow(recorded.vel - data.vel, 2);
+    double dpos = pow(recorded.pos - data.pos, 2);
+    double deff = pow(recorded.eff - data.eff, 2);
 
-    return sqrt(delta_vel + delta_pos + delta_eff);
+    return sqrt(dvel + dpos + deff);
 }
 
 // cart
