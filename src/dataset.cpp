@@ -210,6 +210,20 @@ double Dataset::get_dist(const Dataset::data_point& data,
     return sqrt(delta_vel + delta_pos + delta_eff);
 }
 
+double Dataset::get_quaternion_dist(geometry_msgs::Quaternion c, 
+            geometry_msgs::Quaternion d) {
+
+    Eigen::Vector4f dv;
+    dv[0] = d.w; dv[1] = d.x; dv[2] = d.y; dv[3] = d.z;
+    Eigen::Matrix<float, 3,4> inv;
+    inv(0,0) = -c.x; inv(0,1) = c.w; inv(0,2) = -c.z; inv(0,3) = c.y;
+    inv(1,0) = -c.y; inv(1,1) = c.z; inv(1,2) = c.w; inv(1,3) = -c.x;
+    inv(2,0) = -c.z; inv(2,1) = -c.y; inv(2,2) = c.x; inv(2,3) = c.w;
+
+    Eigen::Vector3f m = inv * dv * -2.0;
+    return m.norm();
+}
+
 // cart
 double Dataset::get_pos_dist(const Position& data, const Position& action) {
     // Calculating the distance between the positions
@@ -221,6 +235,15 @@ double Dataset::get_pos_dist(const Position& data, const Position& action) {
     // Returning the sum of the distances
     return dist
 }
+
+String Dataset::guess_classification_quaternion(struct bin currentBin,
+         const bin_list list_of_bins) {
+
+
+
+
+}
+ 
 
 // cart
 string Dataset::guess_classification_cart(const list<Pose>& recorded) {
