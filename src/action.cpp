@@ -1,6 +1,4 @@
 #include <cmath>
-#include <eigen3/Eigen/Dense>
-#include <eigen_conversions/eigen_msg.h>
 
 #define NUM_JOINTS 8
 #define NUM_BINS 10
@@ -173,6 +171,7 @@ double Action::euclidean_dist(const geometry_msgs::Point& data, const geometry_m
  * Returns the distance
  */
 double Action::quarterion_dist(const geometry_msgs::Quaternion, const geometry_msgs::Quaternion) {
+/*
     Eigen::Vector4f dv;
  	dv[0] = d.w; dv[1] = d.x; dv[2] = d.y; dv[3] = d.z;
 	Eigen::Matrix<float, 3,4> inv;
@@ -182,4 +181,6 @@ double Action::quarterion_dist(const geometry_msgs::Quaternion, const geometry_m
 
     Eigen::Vector3f m = inv * dv * -2.0;
     return m.norm();
+    */
+    return 0;
 }
