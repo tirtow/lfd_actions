@@ -1,6 +1,3 @@
-#ifndef GUARD_action_h
-#define GUARD_action_h
-
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
@@ -8,6 +5,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
+
+#ifndef GUARD_action_h
+#define GUARD_action_h
 
 class Action {
     public:

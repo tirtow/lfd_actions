@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 #include "action.h"
-#include "action.cpp"
 
 /**
  * Class to represent the dataset that the robot uses to classify actions

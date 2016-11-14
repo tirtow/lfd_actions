@@ -132,7 +132,7 @@ add_executable(data_recorder src/data_recorder.cpp)
 add_executable(raw_data_recorder src/raw_data_recorder.cpp)
 add_executable(temporal_data_recorder src/temporal_data_recorder.cpp)
 add_executable(arff_recorder src/arff_recorder.cpp)
-add_executable(knn src/knn.cpp)
+add_executable(knn src/knn.cpp src/action.cpp)
 
 target_link_libraries(data_recorder ${catkin_LIBRARIES})
 target_link_libraries(raw_data_recorder ${catkin_LIBRARIES})

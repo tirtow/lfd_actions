@@ -11,7 +11,6 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include "action.h"
-#include "action.cpp"
 
 #define NUM_JOINTS 8
 #define NUM_BINS 10

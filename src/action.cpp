@@ -1,3 +1,4 @@
+#include "action.h"
 #include <cmath>
 
 #define NUM_JOINTS 8

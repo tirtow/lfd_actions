@@ -9,8 +9,6 @@ using std::list;
 using std::vector;
 using std::string;
 using std::map;
-using geometry_msgs::Pose;
-using geometry_msgs::Point;
 
 // cart
 Dataset::Dataset(const string& file, int k_val = 1) : k(k_val) {
