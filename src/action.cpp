@@ -1,5 +1,6 @@
-<<<<<<< HEAD
 #include <cmath>
+#include <eigen3/Eigen/Dense>
+#include <eigen_conversions/eigen_msg.h>
 
 #define NUM_JOINTS 8
 #define NUM_BINS 10
@@ -66,7 +67,7 @@ void Action::print(ofstream& os) const {
     os << label << endl;
 }
 
-void Action::print_pose(ofstream& os, const Pose& pose) {
+void Action::print_pose(ofstream& os, const Pose& pose) const {
     os << pose.position.x << " " << pose.position.y << " " << pose.position.z
        << " " << pose.orientation.x << " " << pose.orientation.y << " "
        << pose.orientation.z << " " << pose.orientation.w;
@@ -145,7 +146,7 @@ Pose Action::get_pose(const std::vector<double>& values, int i) {
  * Calculates the distance between two joint_states
  * Returns the distance
  */ 
-double joint_dist(const joint_state& data, const joint_state& recorded) {
+double Action::joint_dist(const joint_state& data, const joint_state& recorded) {
     double dvel = pow(recorded.vel - data.vel, 2);
     double dpos = pow(recorded.pos - data.pos, 2);
     double deff = pow(recorded.eff - data.eff, 2);
@@ -157,10 +158,10 @@ double joint_dist(const joint_state& data, const joint_state& recorded) {
  * Calculates the euclidean distance between two Points
  * Returns the distance
  */
-double euclidean_dist(const geometry_msgs::Point& data, const geometry_msgs::Point& action) {
-	double dx = pow(action.position.x - data.position.x, 2);
-	double dy = pow(action.position.y - data.position.y, 2);
-	double dz = pow(action.position.z - data.position.z, 2);
+double Action::euclidean_dist(const geometry_msgs::Point& data, const geometry_msgs::Point& action) {
+	double dx = pow(action.x - data.x, 2);
+	double dy = pow(action.y - data.y, 2);
+	double dz = pow(action.z - data.z, 2);
 	double dist = sqrt(dx + dy + dz);
 
 	// Returning the sum of the distances
@@ -171,7 +172,7 @@ double euclidean_dist(const geometry_msgs::Point& data, const geometry_msgs::Poi
  * Calculates the distance between two Quaternions
  * Returns the distance
  */
-double quarterion_dist(const geometry_msgs::Quaternion, const geometry_msgs::Quaternion) {
+double Action::quarterion_dist(const geometry_msgs::Quaternion, const geometry_msgs::Quaternion) {
     Eigen::Vector4f dv;
  	dv[0] = d.w; dv[1] = d.x; dv[2] = d.y; dv[3] = d.z;
 	Eigen::Matrix<float, 3,4> inv;

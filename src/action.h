@@ -62,7 +62,7 @@ class Action {
         std::string label;
         std::vector<bin> data;
 
-        void print_pose(std::ofstream&, const geometry_msgs::Pose&);
+        void print_pose(std::ofstream&, const geometry_msgs::Pose&) const;
 
         bool is_num(char c);
 
