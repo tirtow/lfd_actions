@@ -10,6 +10,7 @@
 #include "sensor_msgs/JointState.h"
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
+#include "action.h"
 
 #define NUM_JOINTS 8
 #define NUM_BINS 10
