@@ -4,6 +4,8 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
+#include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -50,11 +52,19 @@ class Action {
          * Calculates the distance between this Action and another Action
          * Returns the distance
          */
-        double get_dist(const Action&);
+        double get_dist(const Action&) const;
+
+        void set_label(const std::string&);
+
+        void print(std::ofstream&) const;
 
     private:
         std::string label;
         std::vector<bin> data;
+
+        void print_pose(std::ofstream&, const geometry_msgs::Pose&);
+
+        bool is_num(char c);
 
         /**
          * Splits a vector of joint_states into the temporal bins

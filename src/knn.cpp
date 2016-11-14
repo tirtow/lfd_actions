@@ -11,6 +11,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include "action.h"
+#include "action.cpp"
 
 #define NUM_JOINTS 8
 #define NUM_BINS 10
@@ -30,8 +31,8 @@ const string ARM_TOPIC = "/joint_states";
 const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
 
 // Vectors used to record the action in callback
-vector<Pose> cartesian;
-Dataset::joint_list joints;
+vector<Pose> poses;
+Action::joint_list joints;
 
 /**
  * Reads a character without blocking execution
@@ -67,6 +68,7 @@ int getch() {
  * number of bins
  * Returns a joint_list that contains the bins for each joint
  */
+/*
 Dataset::joint_list split_bins() {
     Dataset::joint_list bins;
     int bin_length = (joints.size() / NUM_JOINTS) / NUM_BINS;
@@ -103,12 +105,14 @@ Dataset::joint_list split_bins() {
 
     return bins;
 }
+*/
 
 /**
  * Builds the temporal bin specified by the bin_num
  * Gets the pose for the bin and the joint_states for the bin
  * Returns a bin with the appropriate pose and joint_states
  */
+/*
 Dataset::bin build_bin(int bin_num, const Dataset::joint_list& joint_bins) {
     Dataset::bin bin;
 
@@ -123,6 +127,7 @@ Dataset::bin build_bin(int bin_num, const Dataset::joint_list& joint_bins) {
 
     return bin;
 }
+*/
 
 /**
  * Builds the action from the joint_bins
@@ -130,6 +135,7 @@ Dataset::bin build_bin(int bin_num, const Dataset::joint_list& joint_bins) {
  * been determined
  * Returns the new action
  */
+/*
 Dataset::action build_action(const Dataset::joint_list& joint_bins) {
     Dataset::action ac;
     ac.label = "";
@@ -141,6 +147,7 @@ Dataset::action build_action(const Dataset::joint_list& joint_bins) {
 
     return ac;
 }
+*/
 
 /**
  * Prompts the user to record another actions
@@ -205,7 +212,7 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
         // Looping through each joint
         for (int i = 0; i < names.size(); i++) {
             // Creating a joint_state for the joint
-            Dataset::joint_state state;
+            Action::joint_state state;
             state.pos = positions[i];
             state.vel = velocities[i];
             state.vel = efforts[i];
@@ -216,7 +223,7 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
     }
 
     // Pushing the cartesian pose
-    cartesian.push_back(cart->pose);
+    poses.push_back(cart->pose);
 }
 
 int main(int argc, char** argv) {
@@ -282,7 +289,7 @@ int main(int argc, char** argv) {
     bool again = true;
     while (again) {
         // Clearing the vectors
-        cartesian.clear();
+        poses.clear();
         joints.clear();
 
         // Waiting to record
@@ -300,8 +307,7 @@ int main(int argc, char** argv) {
         cout << endl;
 
         // Creating the recorded action
-        Dataset::joint_list bins = split_bins();
-        Dataset::action ac = build_action(bins);
+        Action ac(poses, joints);
 
         // Guessing the classification
         string guess = dataset.guess_classification(ac);
@@ -311,7 +317,7 @@ int main(int argc, char** argv) {
 
         // If supervised checking guess with user
         if (supervised) {
-            ac.label = confirm_guess(guess);
+            ac.set_label(confirm_guess(guess));
             dataset.update(ac);
         }
 
