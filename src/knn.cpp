@@ -9,7 +9,8 @@
 #include "geometry_msgs/Pose.h"
 #include "sensor_msgs/JointState.h"
 #include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
 #include "action.h"
 
 #define NUM_JOINTS 8
@@ -233,8 +234,9 @@ int main(int argc, char** argv) {
     // Creating the subscribers
     message_filters::Subscriber<JointState> arm_sub(n, ARM_TOPIC, 1000);
     message_filters::Subscriber<PoseStamped> cart_sub(n, CART_TOPIC, 1000);
-    message_filters::TimeSynchronizer<JointState, PoseStamped> sync(
-            arm_sub, cart_sub, 1000);
+
+    typedef message_filters::sync_policies::ApproximateTime<JointState, PoseStamped> policy;
+    message_filters::Synchronizer<policy> sync(policy(100), arm_sub, cart_sub);
     sync.registerCallback(boost::bind(&callback, _1, _2));
 
     // Getting command line arguments
