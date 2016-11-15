@@ -196,3 +196,25 @@ double Action::quarterion_dist(const geometry_msgs::Quaternion, const geometry_m
     */
     return 0;
 }
+
+
+double get_dist(const Action& currentAction) {
+
+	int i;
+
+	double sumOfAll = 0.0;
+
+	
+	// Within each bin, add up the joint dist, euclidean dist, and quaternion dist.
+	for(bin_cit it = data.begin(); it != data.end(); it++)
+	{
+
+		sumOfAll = joint_dist_sum(currentAction, *it) +                                             euclidean_dist(currentAction, it -> pose.position) +                                                       quaterion_dist(currentAction, it -> pose.orientation);
+
+
+	}
+       // Then get an average of the 10 bins and return it.
+	double average = sumOfAll / 10.0;
+
+	return average;
+}
