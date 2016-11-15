@@ -102,6 +102,8 @@ class Action {
          */
         geometry_msgs::Pose get_pose(const std::vector<double>&, int);
 
+        double joint_dist_sum(const bin&, const bin&);
+
         /**
          * Calculates the distance between two joint_states
          * Returns the distance

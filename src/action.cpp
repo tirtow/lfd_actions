@@ -156,6 +156,16 @@ Pose Action::get_pose(const std::vector<double>& values, int i) {
     return pose;
 }
 
+double Action::joint_dist_sum(const bin& recorded_bin, const bin& this_bin) {
+    double sum = 0.0;
+
+    for (int i = 0; i < recorded_bin.joints.size(); i++) {
+        sum += joint_idst(recorded_bin.joints[i], this_bin.joints[i]);
+    }
+
+    return sum;
+}
+
 /**
  * Calculates the distance between two joint_states
  * Returns the distance
