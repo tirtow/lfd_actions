@@ -122,7 +122,7 @@ class Action {
          * Calculates the distance between two Quaternions
          * Returns the distance
          */
-        double quarterion_dist(const geometry_msgs::Quaternion, const geometry_msgs::Quaternion) const;
+        double quarterion_dist(const geometry_msgs::Quaternion&, const geometry_msgs::Quaternion&) const;
 
 };
 
