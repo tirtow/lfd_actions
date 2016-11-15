@@ -53,6 +53,8 @@ class Action {
 
         std::string get_label() const;
 
+        std::vector<bin> get_data() const;
+
         /**
          * Calculates the distance between this Action and another Action
          * Returns the distance
@@ -102,25 +104,25 @@ class Action {
          */
         geometry_msgs::Pose get_pose(const std::vector<double>&, int);
 
-        double joint_dist_sum(const bin&, const bin&);
+        double joint_dist_sum(const bin&, const bin&) const;
 
         /**
          * Calculates the distance between two joint_states
          * Returns the distance
          */
-        double joint_dist(const joint_state&, const joint_state&);
+        double joint_dist(const joint_state&, const joint_state&) const;
 
         /**
          * Calculates the euclidean distance between two Points
          * Returns the distance
          */
-        double euclidean_dist(const geometry_msgs::Point&, const geometry_msgs::Point&);
+        double euclidean_dist(const geometry_msgs::Point&, const geometry_msgs::Point&) const;
 
         /**
          * Calculates the distance between two Quaternions
          * Returns the distance
          */
-        double quarterion_dist(const geometry_msgs::Quaternion, const geometry_msgs::Quaternion);
+        double quarterion_dist(const geometry_msgs::Quaternion, const geometry_msgs::Quaternion) const;
 
 };
 

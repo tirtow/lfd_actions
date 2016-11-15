@@ -156,11 +156,11 @@ Pose Action::get_pose(const std::vector<double>& values, int i) {
     return pose;
 }
 
-double Action::joint_dist_sum(const bin& recorded_bin, const bin& this_bin) {
+double Action::joint_dist_sum(const bin& recorded_bin, const bin& this_bin) const {
     double sum = 0.0;
 
     for (int i = 0; i < recorded_bin.joints.size(); i++) {
-        sum += joint_idst(recorded_bin.joints[i], this_bin.joints[i]);
+        sum += joint_dist(recorded_bin.joints[i], this_bin.joints[i]);
     }
 
     return sum;
@@ -170,7 +170,7 @@ double Action::joint_dist_sum(const bin& recorded_bin, const bin& this_bin) {
  * Calculates the distance between two joint_states
  * Returns the distance
  */ 
-double Action::joint_dist(const joint_state& data, const joint_state& recorded) {
+double Action::joint_dist(const joint_state& data, const joint_state& recorded)  const {
     double dvel = pow(recorded.vel - data.vel, 2);
     double dpos = pow(recorded.pos - data.pos, 2);
     double deff = pow(recorded.eff - data.eff, 2);
@@ -182,7 +182,7 @@ double Action::joint_dist(const joint_state& data, const joint_state& recorded) 
  * Calculates the euclidean distance between two Points
  * Returns the distance
  */
-double Action::euclidean_dist(const geometry_msgs::Point& data, const geometry_msgs::Point& action) {
+double Action::euclidean_dist(const geometry_msgs::Point& data, const geometry_msgs::Point& action) const {
 	double dx = pow(action.x - data.x, 2);
 	double dy = pow(action.y - data.y, 2);
 	double dz = pow(action.z - data.z, 2);
@@ -196,7 +196,7 @@ double Action::euclidean_dist(const geometry_msgs::Point& data, const geometry_m
  * Calculates the distance between two Quaternions
  * Returns the distance
  */
-double Action::quarterion_dist(const geometry_msgs::Quaternion, const geometry_msgs::Quaternion) {
+double Action::quarterion_dist(const geometry_msgs::Quaternion, const geometry_msgs::Quaternion) const {
 /*
     Eigen::Vector4f dv;
  	dv[0] = d.w; dv[1] = d.x; dv[2] = d.y; dv[3] = d.z;
@@ -211,22 +211,21 @@ double Action::quarterion_dist(const geometry_msgs::Quaternion, const geometry_m
     return 0;
 }
 
+vector<Action::bin> Action::get_data() const {
+    return data;
+}
 
-double get_dist(const Action& currentAction) {
 
-	int i;
-
+double Action::get_dist(const Action& currentAction) const {
 	double sumOfAll = 0.0;
-
 	
 	// Within each bin, add up the joint dist, euclidean dist, and quaternion dist.
-	for(bin_cit it = data.begin(); it != data.end(); it++)
-	{
+    vector<bin> current_bins = currentAction.get_data();
+    vector<bin> this_bins = this->get_data();
 
-		sumOfAll = joint_dist_sum(currentAction, *it) +                                             euclidean_dist(currentAction, it -> pose.position) +                                                       quaterion_dist(currentAction, it -> pose.orientation);
-
-
-	}
+    for (int i = 0; i < NUM_BINS; i++) {
+		sumOfAll = joint_dist_sum(current_bins[i], this_bins[i]) + euclidean_dist(current_bins[i].pose.position, this_bins[i].pose.position) + quarterion_dist(current_bins[i].pose.orientation, this_bins[i].pose.orientation);
+    }
        // Then get an average of the 10 bins and return it.
 	double average = sumOfAll / 10.0;
 
