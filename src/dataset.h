@@ -30,6 +30,10 @@ class Dataset {
          */
         ~Dataset();
 
+        /**
+         * Calls the overloaded guess_classification passing base_k
+         * as the value for k
+         */
         std::string guess_classification(const Action&);
 
         /**
@@ -40,13 +44,30 @@ class Dataset {
 
     private:
         // The number of neighbors to consider for k-NN
-        int k;
+        int base_k;
 
         // The output file stream for the dataset
         std::ofstream os;
 
         // The list of actions that makes up the dataset
         Action::action_list action_set;
+
+        /**
+         * Guesses the classification of an action given the number of nearest
+         * neighbors to consider. Calculates the distance between the passed
+         * Action and each Action in this Dataset to find the nearest neighbors
+         * Returns the guess for the classification
+         */
+        std::string guess_classification(const Action&, int);
+
+        /**
+         * Inserts the distance and label into the respective vectors based on
+         * the distance. Inserts such that the vectors are ordered from the
+         * smallest distance to the greatest distance
+         * Returns whether or not the value was inserted
+         */
+        bool insert_dist(double, const std::string&, std::vector<double>&,
+                std::vector<std::string>&);
 
         /**
          * Creates a map of the values in the passed vector to the number of

@@ -51,6 +51,8 @@ class Action {
         Action(const std::vector<geometry_msgs::Pose>&, const joint_list&,
                 const std::vector<ros::Time>&);
 
+        std::string get_label() const;
+
         /**
          * Calculates the distance between this Action and another Action
          * Returns the distance

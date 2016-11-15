@@ -48,6 +48,10 @@ Action::Action(const vector<Pose>& poses, const joint_list& joints,
     }
 }
 
+string Action::get_label() const {
+    return label;
+}
+
 void Action::set_label(const string& new_label) {
     label = new_label;
 }
