@@ -21,6 +21,9 @@ Action::Action(const string& line) {
         // Creating the bin
         bin b;
 
+        // Getting the time
+        b.time = ros::Time(values[index++]);
+
         // Building the joint_states
         for (int i = index; i < 24; i += 3) {
             b.joints.push_back(get_joint_state(values, i));
@@ -34,13 +37,14 @@ Action::Action(const string& line) {
     }
 }
 
-Action::Action(const vector<Pose>& poses, const joint_list& joints) {
+Action::Action(const vector<Pose>& poses, const joint_list& joints,
+        const vector<ros::Time>& times) {
     // Blank label for unlabeled action
     label = "";
 
     // Building the bins
     for (int bin = 0; bin < NUM_BINS; bin++) {
-        data.push_back(build_bin(bin, poses, joints));
+        data.push_back(build_bin(bin, poses, joints, times));
     }
 }
 
@@ -51,11 +55,14 @@ void Action::set_label(const string& new_label) {
 void Action::print(ofstream& os) const {
     // Adding to dataset file
     for (bin_cit bin_it = data.begin(); bin_it != data.end(); bin_it++) {
+        // Writing the time
+        os << bin_it->time.toSec() << ",";
+
         // Writing the joint_states
         for (joint_cit joint_it = bin_it->joints.begin();
                 joint_it != bin_it->joints.end(); joint_it++) {
-            os << joint_it->vel << " " << joint_it->pos << " "
-               << joint_it->eff << " ";
+            os << joint_it->vel << "," << joint_it->pos << ","
+               << joint_it->eff << ",";
         }
 
         // Writing the pose
@@ -67,9 +74,9 @@ void Action::print(ofstream& os) const {
 }
 
 void Action::print_pose(ofstream& os, const Pose& pose) const {
-    os << pose.position.x << " " << pose.position.y << " " << pose.position.z
-       << " " << pose.orientation.x << " " << pose.orientation.y << " "
-       << pose.orientation.z << " " << pose.orientation.w;
+    os << pose.position.x << "," << pose.position.y << "," << pose.position.z
+       << "," << pose.orientation.x << "," << pose.orientation.y << ","
+       << pose.orientation.z << "," << pose.orientation.w;
 }
 
 bool Action::is_num(char c) {
@@ -100,11 +107,15 @@ string Action::split_line(const string& line, vector<double>& values) {
     return classification;
 }
 
-Action::bin Action::build_bin(int bin_num, const vector<Pose>& poses, const joint_list& joints) {
+Action::bin Action::build_bin(int bin_num, const vector<Pose>& poses,
+        const joint_list& joints, const vector<ros::Time>& times) {
     bin b;
 
     // Getting the pose
     b.pose = poses[bin_num];
+
+    // Getting the time
+    b.time = times[bin_num];
 
     // Getting the joints
     int offset = bin_num * NUM_BINS;

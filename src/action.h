@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <std_msgs/Time.h>
 
 #ifndef GUARD_action_h
 #define GUARD_action_h
@@ -22,6 +23,7 @@ class Action {
         struct bin {
             std::vector<joint_state> joints;
             geometry_msgs::Pose pose;
+            ros::Time time;
         };
 
         // List types
@@ -46,7 +48,8 @@ class Action {
          * Builds an action given the vector of poses and joint_states
          * recorded for the action
          */
-        Action(const std::vector<geometry_msgs::Pose>&, const joint_list&);
+        Action(const std::vector<geometry_msgs::Pose>&, const joint_list&,
+                const std::vector<ros::Time>&);
 
         /**
          * Calculates the distance between this Action and another Action
@@ -61,6 +64,7 @@ class Action {
     private:
         std::string label;
         std::vector<bin> data;
+        std::vector<ros::Time> times;
 
         void print_pose(std::ofstream&, const geometry_msgs::Pose&) const;
 
@@ -76,7 +80,8 @@ class Action {
          * Builds the temporal bin given the bin number and vectors of Poses
          * and joint_states
          */
-        bin build_bin(int, const std::vector<geometry_msgs::Pose>&, const joint_list&);
+        bin build_bin(int, const std::vector<geometry_msgs::Pose>&,
+                const joint_list&, const std::vector<ros::Time>&);
 
         /**
          * Splits a string into a vector of double values and returns

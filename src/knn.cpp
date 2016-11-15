@@ -11,6 +11,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <std_msgs/Header.h>
 #include "action.h"
 
 #define NUM_JOINTS 8
@@ -33,6 +34,7 @@ const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
 // Vectors used to record the action in callback
 vector<Pose> poses;
 Action::joint_list joints;
+vector<ros::Time> times;
 
 /**
  * Reads a character without blocking execution
@@ -224,6 +226,9 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
 
     // Pushing the cartesian pose
     poses.push_back(cart->pose);
+
+    // Pushing the time
+    times.push_back(cart->header.stamp);
 }
 
 int main(int argc, char** argv) {
@@ -308,7 +313,7 @@ int main(int argc, char** argv) {
         cout << endl;
 
         // Creating the recorded action
-        Action ac(poses, joints);
+        Action ac(poses, joints, times);
 
         // Guessing the classification
         string guess = dataset.guess_classification(ac);
