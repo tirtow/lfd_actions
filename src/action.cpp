@@ -70,25 +70,21 @@ Action::pose_cit Action::end() const {
     return poses.end();
 }
 
+Action::Action(const std::list<geometry_msgs::Pose>& input) {
+
+// Iterate through input list and push back
+    for(list<Pose>::const_iterator input_it = input.begin(); input_it != input.end(); input_it++) {
+	
+	pose.push_back(input_it->pose);
+    }
+}
+
 void Action::print(ofstream& os) const {
     // Adding to dataset file
-    for (bin_cit bin_it = data.begin(); bin_it != data.end(); bin_it++) {
-        // Writing the time
-        //os << bin_it->time.toSec() << ",";
-
-        // Writing the joint_states
-        /*
-        for (joint_cit joint_it = bin_it->joints.begin();
-                joint_it != bin_it->joints.end(); joint_it++) {
-            os << joint_it->vel << "," << joint_it->pos << ","
-               << joint_it->eff << ",";
-        }
-        */
-
+    for (pose_cit pose_it = poses.begin(); pose_it != poses.end(); pose_it++) {  
         // Writing the pose
-        print_pose(os, bin_it->pose);
+        print_pose(os, pose_it->pose);
     }
-
     // Writing the label
     os << label << endl;
 }
