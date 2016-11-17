@@ -62,14 +62,16 @@ void Action::print(ofstream& os) const {
     // Adding to dataset file
     for (bin_cit bin_it = data.begin(); bin_it != data.end(); bin_it++) {
         // Writing the time
-        os << bin_it->time.toSec() << ",";
+        //os << bin_it->time.toSec() << ",";
 
         // Writing the joint_states
+        /*
         for (joint_cit joint_it = bin_it->joints.begin();
                 joint_it != bin_it->joints.end(); joint_it++) {
             os << joint_it->vel << "," << joint_it->pos << ","
                << joint_it->eff << ",";
         }
+        */
 
         // Writing the pose
         print_pose(os, bin_it->pose);

@@ -3,6 +3,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <iostream>
 #include <fstream>
+#include <list>
 #include <string>
 #include <vector>
 #include <std_msgs/Time.h>
@@ -51,6 +52,8 @@ class Action {
         Action(const std::vector<geometry_msgs::Pose>&, const joint_list&,
                 const std::vector<ros::Time>&);
 
+        Action(const std::list<geometry_msgs::Pose>&);
+
         std::string get_label() const;
 
         std::vector<bin> get_data() const;
@@ -65,8 +68,11 @@ class Action {
 
         void print(std::ofstream&) const;
 
+        void size() const;
+
     private:
         std::string label;
+        std::vector<geometry_msgs::Pose> poses;
         std::vector<bin> data;
         std::vector<ros::Time> times;
 

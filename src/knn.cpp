@@ -13,6 +13,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <std_msgs/Header.h>
 #include "action.h"
+#include "dtw.h"
 
 #define NUM_JOINTS 8
 #define NUM_BINS 10
