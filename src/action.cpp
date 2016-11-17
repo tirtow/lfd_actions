@@ -1,4 +1,5 @@
 #include "action.h"
+#include "dtw.h"
 #include <cmath>
 #include <Eigen/Dense>
 #include <eigen_conversions/eigen_msg.h>
@@ -10,6 +11,7 @@ using std::ofstream;
 using std::endl;
 using std::string;
 using std::vector;
+using std::list;
 using geometry_msgs::Pose;
 
 Action::Action(const string& line) {
@@ -20,22 +22,9 @@ Action::Action(const string& line) {
     // Looping through all the values
     int index = 0;
     while (index < values.size()) {
-        // Creating the bin
-        bin b;
-
-        // Getting the time
-        b.time = ros::Time(values[index++]);
-
-        // Building the joint_states
-        for (int i = index; i < 24; i += 3) {
-            b.joints.push_back(get_joint_state(values, i));
-        }
-
         // Getting the pose
-        b.pose = get_pose(values, index++);
-
-        // Adding to the action
-        data.push_back(b);
+        poses.push_back(get_pose(values, index));
+        index += 7;
     }
 }
 
@@ -75,7 +64,7 @@ Action::Action(const std::list<geometry_msgs::Pose>& input) {
 // Iterate through input list and push back
     for(list<Pose>::const_iterator input_it = input.begin(); input_it != input.end(); input_it++) {
 	
-	pose.push_back(input_it->pose);
+	poses.push_back(*input_it);
     }
 }
 
@@ -83,7 +72,7 @@ void Action::print(ofstream& os) const {
     // Adding to dataset file
     for (pose_cit pose_it = poses.begin(); pose_it != poses.end(); pose_it++) {  
         // Writing the pose
-        print_pose(os, pose_it->pose);
+        print_pose(os, *pose_it);
     }
     // Writing the label
     os << label << endl;
@@ -226,6 +215,8 @@ vector<Action::bin> Action::get_data() const {
 
 
 double Action::get_dist(const Action& currentAction) const {
+    return DTW::min_diff(*this, currentAction);
+    /*
 	double sumOfAll = 0.0;
 	
 	// Within each bin, add up the joint dist, euclidean dist, and quaternion dist.
@@ -239,4 +230,5 @@ double Action::get_dist(const Action& currentAction) const {
 	double average = sumOfAll / 10.0;
 
 	return average;
+    */
 }

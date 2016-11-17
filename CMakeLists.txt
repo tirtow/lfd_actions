@@ -130,7 +130,7 @@ include_directories(
 # add_dependencies(lfd_actions ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(knn src/knn.cpp src/action.cpp)
+add_executable(knn src/knn.cpp src/action.cpp src/dtw.cpp)
 target_link_libraries(knn ${catkin_LIBRARIES})
 
 ## Add cmake target dependencies of the executable

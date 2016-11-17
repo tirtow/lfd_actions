@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <list>
 #include <termios.h>
 #include "dataset.h"
 #include "dataset.cpp"
@@ -27,12 +28,14 @@ using std::vector;
 using geometry_msgs::Pose;
 using geometry_msgs::PoseStamped;
 using sensor_msgs::JointState;
+using std::list;
 
 // The topic the arm joints publish to
 const string ARM_TOPIC = "/joint_states";
 const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
 
 // Vectors used to record the action in callback
+list<Pose> pose_list;
 vector<Pose> poses;
 Action::joint_list joints;
 vector<ros::Time> times;
@@ -145,11 +148,17 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
     times.push_back(cart->header.stamp);
 }
 
+void cart_cb(const PoseStamped::ConstPtr& msg) {
+    pose_list.push_back(msg->pose);
+}
+
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "arff_recorder");
     ros::NodeHandle n;
+    ros::Rate loop_rate(20);
 
+/*
     // Creating the subscribers
     message_filters::Subscriber<JointState> arm_sub(n, ARM_TOPIC, 1000);
     message_filters::Subscriber<PoseStamped> cart_sub(n, CART_TOPIC, 1000);
@@ -157,6 +166,10 @@ int main(int argc, char** argv) {
     typedef message_filters::sync_policies::ApproximateTime<JointState, PoseStamped> policy;
     message_filters::Synchronizer<policy> sync(policy(100), arm_sub, cart_sub);
     sync.registerCallback(boost::bind(&callback, _1, _2));
+    */
+
+    // Creating the subscriber
+    ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 1000, cart_cb);
 
     // Getting command line arguments
     string dataset_name;
@@ -223,11 +236,12 @@ int main(int argc, char** argv) {
         // Recording the data
         while (ros::ok() && getch() != 'q') {
             ros::spinOnce();
+            loop_rate.sleep();
         }
         cout << endl;
 
         // Creating the recorded action
-        Action ac(poses, joints, times);
+        Action ac(pose_list);
 
         // Guessing the classification
         string guess = dataset.guess_classification(ac);

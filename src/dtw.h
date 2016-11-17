@@ -4,7 +4,7 @@
 #include "action.h"
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
-#include <geometry_msgs/Quarternion.h>
+#include <geometry_msgs/Quaternion.h>
 
 class DTW {
     public:
@@ -41,10 +41,10 @@ class DTW {
         static double position_distance(const geometry_msgs::Point&, const geometry_msgs::Point&);
 
         /**
-         * Calculates the distance between two quarternions
+         * Calculates the distance between two quaternions
          * Returns the distance
          */
-        static double orientation_distance(const geometry_msgs::Quarternion&, const geometry_msgs::Quarternion&);
+        static double quaternion_distance(const geometry_msgs::Quaternion&, const geometry_msgs::Quaternion&);
 };
 
 #endif

@@ -4,17 +4,17 @@
 
 using geometry_msgs::Point;
 using geometry_msgs::Pose;
-using geometry_msgs::Quarternion;
+using geometry_msgs::Quaternion;
 
-static double DTW::min_diff(const Action& x, const Action& y) {
+double DTW::min_diff(const Action& x, const Action& y) {
     Action::pose_size rows = x.size();
     Action::pose_size cols = y.size();
 
-    double diffs[rows][cols];
-    double costs[rows][cols];
+    double** diffs;
+    double** costs;
 
     // Getting the differences
-    get_diffs(x, y, diffs);
+    DTW::get_diffs(x, y, diffs);
 
     // Setting the first row
     for (Action::pose_size c = 0; c < cols; c++) {
@@ -30,7 +30,7 @@ static double DTW::min_diff(const Action& x, const Action& y) {
     for (Action::pose_size r = 1; r < rows; r++) {
         for (Action::pose_size c = 1; c < cols; c++) {
             costs[r][c] = diffs[r][c]
-                    + min(diffs[r - 1][c - 1], diffs[r - 1][c], diffs[r][c - 1]);
+                    + DTW::min(diffs[r - 1][c - 1], diffs[r - 1][c], diffs[r][c - 1]);
         }
     }
 
@@ -38,7 +38,7 @@ static double DTW::min_diff(const Action& x, const Action& y) {
     return costs[rows - 1][cols - 1];
 }
 
-static void DTW::get_diffs(const Action& x, const Action& y, double** diffs) {
+void DTW::get_diffs(const Action& x, const Action& y, double** diffs) {
     int row = 0;
     int col = 0;
 
@@ -49,7 +49,7 @@ static void DTW::get_diffs(const Action& x, const Action& y, double** diffs) {
     }
 }
 
-static double DTW::min(double x, double y, double z) {
+double DTW::min(double x, double y, double z) {
     if (x < y) {
         return (x < z) ? x : z;
     } else {
@@ -57,12 +57,12 @@ static double DTW::min(double x, double y, double z) {
     }
 }
 
-static double DTW::distance(const Pose& x, const Pose& y) {
+double DTW::distance(const Pose& x, const Pose& y) {
     return position_distance(x.position, y.position)
-            + orientation_distance(x.orientation, y.orientation);
+            + quaternion_distance(x.orientation, y.orientation);
 }
 
-static double DTW::position_distance(const Point& x, const Point& y) {
+double DTW::position_distance(const Point& x, const Point& y) {
 	double dx = pow(y.x - x.x, 2);
 	double dy = pow(y.y - x.y, 2);
 	double dz = pow(y.z - x.z, 2);
@@ -72,7 +72,7 @@ static double DTW::position_distance(const Point& x, const Point& y) {
 	return dist;
 }
 
-static double DTW::quarternion_distance(const Quarternion& x, const Quarternion& y) {
+double DTW::quaternion_distance(const Quaternion& c, const Quaternion& d) {
     Eigen::Vector4f dv;
  	dv[0] = d.w; dv[1] = d.x; dv[2] = d.y; dv[3] = d.z;
 	Eigen::Matrix<float, 3,4> inv;
