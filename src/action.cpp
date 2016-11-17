@@ -20,11 +20,8 @@ Action::Action(const string& line) {
     label = split_line(line, values);
 
     // Looping through all the values
-    int index = 0;
-    while (index < values.size()) {
-        // Getting the pose
+    for (int index = 0; index < values.size(); index += 7) {
         poses.push_back(get_pose(values, index));
-        index += 7;
     }
 }
 
