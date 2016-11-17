@@ -58,6 +58,18 @@ void Action::set_label(const string& new_label) {
     label = new_label;
 }
 
+Action::pose_size Action::size() const {
+    return poses.size();
+}
+
+Action::pose_cit Action::begin() const {
+    return poses.begin();
+}
+
+Action::pose_cit Action::end() const {
+    return poses.end();
+}
+
 void Action::print(ofstream& os) const {
     // Adding to dataset file
     for (bin_cit bin_it = data.begin(); bin_it != data.end(); bin_it++) {

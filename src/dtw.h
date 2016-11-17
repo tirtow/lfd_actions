@@ -2,6 +2,9 @@
 #define GUARD_dtw_h
 
 #include "action.h"
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Quarternion.h>
 
 class DTW {
     public:
@@ -24,6 +27,24 @@ class DTW {
          * Returns the minimum value
          */
         static double min(double, double, double);
+
+        /**
+         * Calculates the distance between two Poses
+         * Returns the distance
+         */
+        static double distance(const geometry_msgs::Pose&, const geometry_msgs::Pose&);
+
+        /**
+         * Calculates the distance between two points using euclidean distance
+         * Returns the distance
+         */
+        static double position_distance(const geometry_msgs::Point&, const geometry_msgs::Point&);
+
+        /**
+         * Calculates the distance between two quarternions
+         * Returns the distance
+         */
+        static double orientation_distance(const geometry_msgs::Quarternion&, const geometry_msgs::Quarternion&);
 };
 
 #endif
