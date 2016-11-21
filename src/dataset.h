@@ -34,13 +34,13 @@ class Dataset {
          * Calls the overloaded guess_classification passing base_k
          * as the value for k
          */
-        std::string guess_classification(const Action&);
+        std::string guess_classification(Action&);
 
         /**
          * Updates the dataset by adding the action to the working dataset
          * and adding it to the dataset file
          */
-        void update(const Action&);
+        void update(Action&);
 
     private:
         // The number of neighbors to consider for k-NN
@@ -51,6 +51,8 @@ class Dataset {
 
         // The list of actions that makes up the dataset
         Action::action_list action_set;
+
+		geometry_msgs::Point base;
 
         /**
          * Guesses the classification of an action given the number of nearest

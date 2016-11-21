@@ -88,7 +88,7 @@ void Action::print(ofstream& os) const {
 void Action::print_pose(ofstream& os, const Pose& pose) const {
     os << pose.position.x << "," << pose.position.y << "," << pose.position.z
        << "," << pose.orientation.x << "," << pose.orientation.y << ","
-       << pose.orientation.z << "," << pose.orientation.w;
+       << pose.orientation.z << "," << pose.orientation.w << ",";
 }
 
 bool Action::is_num(char c) {

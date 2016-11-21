@@ -21,9 +21,10 @@ Dataset::Dataset(const string& file, int k = 1) : base_k(k) {
         // Getting the line
         string line;
         getline(is, line);
+        if (line != "") {
         Action ac(line);
-        Point base = ac.begin()->position;
-        ac.offset(base);
+        base = ac.begin()->position;
+       // ac.offset(base);
         action_set.push_back(ac);
 
         // Looping while not at end of file
@@ -41,32 +42,38 @@ Dataset::Dataset(const string& file, int k = 1) : base_k(k) {
         }
     }
 }
+}
 
 Dataset::~Dataset() {
     os.close();
 }
 
-void Dataset::update(const Action& ac) {
-    // Adding to working dataset
-    action_set.push_back(ac);
-
+void Dataset::update(Action& ac) {
     // Printing to file
     ac.print(os);
+    
+    // Adding to working dataset
+    ac.offset(base);
+    action_set.push_back(ac);
 }
 
-string Dataset::guess_classification(const Action& ac) {
+string Dataset::guess_classification(Action& ac) {
+	ac.offset(base);
     return guess_classification(ac, base_k);
 }
 
 string Dataset::guess_classification(const Action& ac, int k) {
     vector<double> closest_dist;
     vector<string> closest_str;
-
+	int count= 1;
+	std::cout << "This size: " << ac.size() << std::endl;
     // Looping through each action in the dataset
     for (Action::action_cit it = action_set.begin();
             it != action_set.end(); it++) {
         // Getting the distance between ac and current action
+        std::cout << "Action " << count++ << " (" << it->get_label() << "): " << it->size() << " items: ";
         double dist = ac.get_dist(*it);
+        std::cout << dist << std::endl;
 
         // Checking to place distance
         string label = it->get_label();

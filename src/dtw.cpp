@@ -1,6 +1,7 @@
 #include "dtw.h"
 #include <Eigen/Dense>
 #include <eigen_conversions/eigen_msg.h>
+#include <iostream>
 
 using geometry_msgs::Point;
 using geometry_msgs::Pose;
@@ -9,12 +10,24 @@ using geometry_msgs::Quaternion;
 double DTW::min_diff(const Action& x, const Action& y) {
     Action::pose_size rows = x.size();
     Action::pose_size cols = y.size();
-
-    double** diffs;
-    double** costs;
-
+    int row = 0;
+    int col = 0;
+    double diffs[rows][cols];
+    double costs[rows][cols];
     // Getting the differences
-    DTW::get_diffs(x, y, diffs);
+    //std::cout << "Items in this:  " << rows << std::endl;
+    //std::cout << "Items in other (" << y.get_label() << "): " << cols << std::endl;
+    for (Action::pose_cit x_it = x.begin(); x_it != x.end(); x_it++) {
+		    int col = 0;
+        for (Action::pose_cit y_it = y.begin(); y_it != y.end(); y_it++) {
+            diffs[row][col] = distance(*x_it, *y_it);
+            col++;
+        }
+        row++;
+    }
+    
+    
+    //DTW::get_diffs(x, y, (double **) diffs);
 
     // Setting the first row
     for (Action::pose_size c = 0; c < cols; c++) {
@@ -40,12 +53,13 @@ double DTW::min_diff(const Action& x, const Action& y) {
 
 void DTW::get_diffs(const Action& x, const Action& y, double** diffs) {
     int row = 0;
-    int col = 0;
-
     for (Action::pose_cit x_it = x.begin(); x_it != x.end(); x_it++) {
+		    int col = 0;
         for (Action::pose_cit y_it = y.begin(); y_it != y.end(); y_it++) {
             diffs[row][col] = distance(*x_it, *y_it);
+            col++;
         }
+        row++;
     }
 }
 

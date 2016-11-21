@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
     */
 
     // Creating the subscriber
-    ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 1000, cart_cb);
+    ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 100, cart_cb);
 
     // Getting command line arguments
     string dataset_name;
@@ -242,9 +242,10 @@ int main(int argc, char** argv) {
 
         // Creating the recorded action
         Action ac(pose_list);
+        Action ac_offset(pose_list);
 
         // Guessing the classification
-        string guess = dataset.guess_classification(ac);
+        string guess = dataset.guess_classification(ac_offset);
 
         // Print out the guess for the action
         print_guess(guess);
