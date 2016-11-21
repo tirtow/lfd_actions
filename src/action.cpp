@@ -13,6 +13,7 @@ using std::string;
 using std::vector;
 using std::list;
 using geometry_msgs::Pose;
+using geometry_msgs::Point;
 
 Action::Action(const string& line) {
     // Getting the label and values
@@ -54,6 +55,15 @@ Action::pose_cit Action::begin() const {
 
 Action::pose_cit Action::end() const {
     return poses.end();
+}
+
+void Action::offset(const Point& base) {
+    typedef vector<Pose>::iterator pose_it;
+    for (pose_it it = poses.begin(); it != poses.end(); it++) {
+        it->position.x -= base.x;
+        it->position.y -= base.y;
+        it->position.z -= base.z;
+    }
 }
 
 Action::Action(const std::list<geometry_msgs::Pose>& input) {

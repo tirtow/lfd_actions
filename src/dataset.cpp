@@ -1,5 +1,6 @@
 #include "dataset.h"
 #include <cmath>
+#include <geometry_msgs/Point.h>
 
 using std::ifstream;
 using std::ofstream;
@@ -9,21 +10,34 @@ using std::list;
 using std::vector;
 using std::string;
 using std::map;
+using geometry_msgs::Point;
 
 Dataset::Dataset(const string& file, int k = 1) : base_k(k) {
     // Setting up streams
     ifstream is(file.c_str());
     os.open(file.c_str(), std::ios_base::app);
 
-    // Looping while not at end of file
-    while (is) {
+    if (is) {
         // Getting the line
         string line;
         getline(is, line);
+        Action ac(line);
+        Point base = ac.begin()->position;
+        ac.offset(base);
+        action_set.push_back(ac);
 
-        // If line not blank build the action and push it
-        if (line != "") {
-            action_set.push_back(Action(line));
+        // Looping while not at end of file
+        while (is) {
+            // Getting the line
+            string line;
+            getline(is, line);
+
+            // If line not blank build the action and push it
+            if (line != "") {
+                Action ac(line);
+                ac.offset(base);
+                action_set.push_back(ac);
+            }
         }
     }
 }

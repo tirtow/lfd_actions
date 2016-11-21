@@ -76,6 +76,8 @@ class Action {
 
         pose_cit end() const;
 
+        void offset(const geometry_msgs::Point&);
+
     private:
         std::string label;
         std::vector<geometry_msgs::Pose> poses;
