@@ -48,6 +48,10 @@ Dataset::~Dataset() {
     os.close();
 }
 
+Point Dataset::get_offset() const {
+    return base;
+}
+
 void Dataset::update(Action& ac) {
     // Printing to file
     ac.print(os);
@@ -68,7 +72,7 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
     int count= 1;
 
     if (verbose) {
-        ROS_INFO("Recorded action size: %d\n", ac.size());
+        ROS_INFO("Recorded action size: %d", ac.size());
     }
 
     // Looping through each action in the dataset
@@ -79,7 +83,7 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
 
         // If verbose printing output
         if (verbose) {
-            ROS_INFO("Action %d (%s): %d items: %f\n", count++,
+            ROS_INFO("Action %d (%s): %d items: %f", count++,
                     it->get_label().c_str(), it->size(), dist);
         }
 

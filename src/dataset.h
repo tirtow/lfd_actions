@@ -37,6 +37,12 @@ class Dataset {
         std::string guess_classification(Action&, bool);
 
         /**
+         * Gets the offset used by this Dataset
+         * Returns base
+         */
+        geometry_msgs::Point get_offset() const;
+
+        /**
          * Updates the dataset by adding the action to the working dataset
          * and adding it to the dataset file
          */

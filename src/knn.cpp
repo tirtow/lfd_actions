@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <list>
@@ -25,6 +26,7 @@ using std::cin;
 using std::cout;
 using std::endl;
 using std::istream;
+using std::ifstream;
 using std::vector;
 using geometry_msgs::Pose;
 using geometry_msgs::PoseStamped;
@@ -136,15 +138,90 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
 
 }
 
+/**
+ * Callback to receive a PoseStamped and recored the pose
+ */
 void cart_cb(const PoseStamped::ConstPtr& msg) {
     pose_list.push_back(msg->pose);
+}
+
+void perform_classification(Dataset& dataset, Action& ac, Action& ac_offset,
+        bool verbose, bool supervise) {
+    // Guessing the classification
+    string guess = dataset.guess_classification(ac_offset, verbose);
+
+    // Print out the guess for the action
+    print_guess(guess);
+
+    // If supervised checking guess with user
+    if (supervise) {
+        ac.set_label(confirm_guess(guess));
+        dataset.update(ac);
+    }
+}
+
+/**
+ * Performs the classification by recording the actions from ros subscribers
+ */
+void record(Dataset& dataset, bool verbose, bool supervise) {
+    ros::Rate loop_rate(20);
+    bool again = true;
+    while (again) {
+        // Clearing the vectors
+        poses.clear();
+        joints.clear();
+
+        // Waiting to record
+        cout << "Press [Enter] to start";
+        cin.ignore();
+
+        // Notifying of recording
+        cout << "Recording data..." << endl
+             << "Press \'q\' to stop" << endl;
+
+        // Recording the data
+        while (ros::ok() && getch() != 'q') {
+            ros::spinOnce();
+            loop_rate.sleep();
+        }
+        cout << endl;
+
+        // Creating the recorded action
+        Action ac(pose_list);
+        Action ac_offset(pose_list);
+        
+        // Performing the classification
+        perform_classification(dataset, ac, ac_offset, verbose, supervise);
+
+        again = repeat();
+    }
+}
+
+void test_file(Dataset& dataset, const string& file, bool verbose, bool supervise) {
+    // Opening the test file
+    ifstream is(file.c_str());
+
+    // Looping through all the actions
+    while (is) {
+        string line;
+        getline(is, line);
+        
+        if (line != "") {
+            // Getting the action
+            Action ac(line);
+            Action ac_offset(line);
+
+            // Performing the classification
+            perform_classification(dataset, ac, ac_offset, verbose, supervise);
+            cout << endl;
+        }
+    }
 }
 
 int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "knn");
     ros::NodeHandle n;
-    ros::Rate loop_rate(20);
 
 /*
     // Creating the subscribers
@@ -214,45 +291,11 @@ int main(int argc, char** argv) {
     // Building the dataset
     Dataset dataset(dataset_name, k);
 
-    bool again = true;
-    while (again) {
-        // Clearing the vectors
-        poses.clear();
-        joints.clear();
-
-        // Waiting to record
-        cout << "Press [Enter] to start";
-        cin.ignore();
-
-        // Notifying of recording
-        cout << "Recording data..." << endl
-             << "Press \'q\' to stop" << endl;
-
-        // Recording the data
-        while (ros::ok() && getch() != 'q') {
-            ros::spinOnce();
-            loop_rate.sleep();
-        }
-        cout << endl;
-
-        // Creating the recorded action
-        Action ac(pose_list);
-        Action ac_offset(pose_list);
-
-        // Guessing the classification
-        string guess = dataset.guess_classification(ac_offset, verbose);
-
-        // Print out the guess for the action
-        print_guess(guess);
-
-        // If supervised checking guess with user
-        if (supervise) {
-            ac.set_label(confirm_guess(guess));
-            dataset.update(ac);
-        }
-
-        // Getting whether or not to record another action
-        again = repeat();
+    // Checking whether running a test file or recording actions
+    if (testfile_name != "") {
+        test_file(dataset, testfile_name, verbose, supervise);
+    } else {
+        record(dataset, verbose, supervise);
     }
 
     return 0;
