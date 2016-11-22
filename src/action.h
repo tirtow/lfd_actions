@@ -91,6 +91,8 @@ class Action {
          */
         void print_pose(std::ofstream&, const geometry_msgs::Pose&) const;
 
+        void print_jointstate(std::ofstream&, const sensor_msgs::JointState&) const;
+
         /**
          * Gets whether or not a character is part of a number
          * Returns true if a digit, '-', '.',  or 'e', false otherwise

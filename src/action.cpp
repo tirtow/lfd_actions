@@ -14,6 +14,7 @@ using std::vector;
 using std::list;
 using geometry_msgs::Pose;
 using geometry_msgs::Point;
+using sensor_msgs::JointState;
 
 Action::Action(const string& line) {
     // Getting the label and values
@@ -47,20 +48,20 @@ Action::Action(const std::list<geometry_msgs::Pose>& a, const std::list<sensor_m
         joints.push_back(*b_it);
     }
 
-    for(list<Time>::const_iterator c_it = c.begin(); c_it != c.end(); c_it++) {
+    for(list<ros::Time>::const_iterator c_it = c.begin(); c_it != c.end(); c_it++) {
         times.push_back(*c_it);
     }
 
 }
 
 
-void print_jointstate(std::ofstream& os, const sensor_msgs::JointState& b) const {
+void Action::print_jointstate(std::ofstream& os, const sensor_msgs::JointState& b) const {
 
 	int i;
 
 	for(i = 0; i < NUM_JOINTS; i++) {	
 
-		os << b.postion[i] << ",";
+		os << b.position[i] << ",";
 
 		os << b.velocity[i]<< ",";
 
@@ -95,9 +96,9 @@ void Action::print(ofstream& os) const {
     for (i = 0; i < poses.size(); i++) {
 	
 	os << times[i] << ",";
-	print_joinststate(os, i);
+	print_jointstate(os, joints[i]);
         // Writing the pose
-        print_pose(os, *pose_it);
+        print_pose(os, poses[i]);
 	
     }
     // Writing the label
