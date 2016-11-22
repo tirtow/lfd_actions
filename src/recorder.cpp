@@ -146,11 +146,13 @@ int main(int argc, char** argv) {
     // Getting the command line args
     string file = "";
     for (int i = 1; i < argc; i++) {
-        if (argv[i] == "-h") {
+		string argv_str(argv[i]);
+        if (argv_str == "-h") {
             print_err();
             return 1;
-        } else if (argv[i] == "-d") {
+        } else if (argv_str == "-d") {
             if (i + 1 < argc) {
+				ROS_INFO("1");
                 file = argv[++i];
             } else {
                 print_err();
@@ -158,6 +160,8 @@ int main(int argc, char** argv) {
             }
         }
     }
+    
+    ROS_INFO("file: %s", file.c_str());
 
     // Checking for file
     if (file == "") {
