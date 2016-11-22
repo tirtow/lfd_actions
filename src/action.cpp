@@ -21,7 +21,7 @@ Action::Action(const string& line) {
     label = split_line(line, values);
 
     // Looping through all the values
-    for (int index = 0; index < values.size(); index += 7) {
+    for (int index = 25; index < values.size(); index += 32) {
         poses.push_back(get_pose(values, index));
     }
 }

@@ -1,6 +1,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
+#include <sensor_msgs/JointState.h>
 #include <iostream>
 #include <fstream>
 #include <list>
@@ -31,6 +32,8 @@ class Action {
          * Builds an action given a list of poses recorded for the action
          */
         Action(const std::list<geometry_msgs::Pose>&);
+
+        Action(const std::list<geometry_msgs::Pose>&, const std::list<sensor_msgs::JointState>, const std::list<ros::Time>&);
 
         /**
          * Gets the label for this Action
@@ -81,6 +84,7 @@ class Action {
         std::string label;
         std::vector<geometry_msgs::Pose> poses;
         std::vector<ros::Time> times;
+        std::vector<sensor_msgs::JointState> joints;
 
         /**
          * Prints the pose of this Action to the specified output stream
