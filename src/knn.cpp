@@ -38,8 +38,7 @@ const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
 // Vectors used to record the action in callback
 list<Pose> pose_list;
 vector<Pose> poses;
-Action::joint_list joints;
-vector<ros::Time> times;
+vector<JointState> joints;
 
 /**
  * Reads a character without blocking execution
@@ -130,29 +129,11 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
     vector<string> names = joint->name;
     // Checking that received the appropriate number of joints
     if (names.size() == 8) {
-        // Getting the positions, velocities, and efforts
-        vector<double> positions = joint->position;
-        vector<double> velocities = joint->velocity;
-        vector<double> efforts = joint->effort;
-
-        // Looping through each joint
-        for (int i = 0; i < names.size(); i++) {
-            // Creating a joint_state for the joint
-            Action::joint_state state;
-            state.pos = positions[i];
-            state.vel = velocities[i];
-            state.vel = efforts[i];
-
-            // Pushing to the joints list
-            joints.push_back(state);
-        }
+        joints.push_back(*joint);
+        // Pushing the cartesian pose
+        poses.push_back(cart->pose);
     }
 
-    // Pushing the cartesian pose
-    poses.push_back(cart->pose);
-
-    // Pushing the time
-    times.push_back(cart->header.stamp);
 }
 
 void cart_cb(const PoseStamped::ConstPtr& msg) {
