@@ -51,29 +51,37 @@ Dataset::~Dataset() {
 void Dataset::update(Action& ac) {
     // Printing to file
     ac.print(os);
-    
+
     // Adding to working dataset
     ac.offset(base);
     action_set.push_back(ac);
 }
 
-string Dataset::guess_classification(Action& ac) {
-	ac.offset(base);
-    return guess_classification(ac, base_k);
+string Dataset::guess_classification(Action& ac, bool verbose) {
+    ac.offset(base);
+    return guess_classification(ac, base_k, verbose);
 }
 
-string Dataset::guess_classification(const Action& ac, int k) {
+string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
     vector<double> closest_dist;
     vector<string> closest_str;
-	int count= 1;
-	std::cout << "This size: " << ac.size() << std::endl;
+    int count= 1;
+
+    if (verbose) {
+        ROS_INFO("Recorded action size: %d\n", ac.size());
+    }
+
     // Looping through each action in the dataset
     for (Action::action_cit it = action_set.begin();
             it != action_set.end(); it++) {
         // Getting the distance between ac and current action
-        std::cout << "Action " << count++ << " (" << it->get_label() << "): " << it->size() << " items: ";
         double dist = ac.get_dist(*it);
-        std::cout << dist << std::endl;
+
+        // If verbose printing output
+        if (verbose) {
+            ROS_INFO("Action %d (%s): %d items: %f\n", count++,
+                    it->get_label().c_str(), it->size(), dist);
+        }
 
         // Checking to place distance
         string label = it->get_label();
@@ -96,8 +104,11 @@ string Dataset::guess_classification(const Action& ac, int k) {
 
     if (guess == "") {
         // Had a tie, reducing k by 1 until tie is broken
-        ROS_INFO("Breaking tie. Setting k to %d", k - 1);
-        return guess_classification(ac, k - 1);
+        if (verbose) {
+            ROS_INFO("Breaking tie. Setting k to %d", k - 1);
+        }
+
+        return guess_classification(ac, k - 1, verbose);
     } else {
         return guess;
     }

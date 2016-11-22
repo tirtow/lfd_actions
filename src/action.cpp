@@ -45,7 +45,7 @@ void Action::set_label(const string& new_label) {
     label = new_label;
 }
 
-Action::pose_size Action::size() const {
+int Action::size() const {
     return poses.size();
 }
 

@@ -8,8 +8,8 @@ using geometry_msgs::Pose;
 using geometry_msgs::Quaternion;
 
 double DTW::min_diff(const Action& x, const Action& y) {
-    Action::pose_size rows = x.size();
-    Action::pose_size cols = y.size();
+    int rows = x.size();
+    int cols = y.size();
     int row = 0;
     int col = 0;
     double diffs[rows][cols];
@@ -30,18 +30,18 @@ double DTW::min_diff(const Action& x, const Action& y) {
     //DTW::get_diffs(x, y, (double **) diffs);
 
     // Setting the first row
-    for (Action::pose_size c = 0; c < cols; c++) {
+    for (int c = 0; c < cols; c++) {
         costs[0][c] = diffs[0][c];
     }
 
     // Setting the first column
-    for (Action::pose_size r = 0; r < rows; r++) {
+    for (int r = 0; r < rows; r++) {
         costs[r][0] = diffs[r][0];
     }
 
     // Filling in the costs
-    for (Action::pose_size r = 1; r < rows; r++) {
-        for (Action::pose_size c = 1; c < cols; c++) {
+    for (int r = 1; r < rows; r++) {
+        for (int c = 1; c < cols; c++) {
             costs[r][c] = diffs[r][c]
                     + DTW::min(diffs[r - 1][c - 1], diffs[r - 1][c], diffs[r][c - 1]);
         }

@@ -39,8 +39,6 @@ class Action {
         typedef bin_list::const_iterator bin_cit;
         typedef action_list::const_iterator action_cit;
 
-        typedef pose_list::size_type pose_size;
-
         /**
          * Builds an action given a string with the values for the action
          * and the label for the action
@@ -70,7 +68,7 @@ class Action {
 
         void print(std::ofstream&) const;
 
-        pose_size size() const;
+        int size() const;
 
         pose_cit begin() const;
 

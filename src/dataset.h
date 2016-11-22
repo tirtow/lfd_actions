@@ -34,7 +34,7 @@ class Dataset {
          * Calls the overloaded guess_classification passing base_k
          * as the value for k
          */
-        std::string guess_classification(Action&);
+        std::string guess_classification(Action&, bool);
 
         /**
          * Updates the dataset by adding the action to the working dataset
@@ -60,7 +60,7 @@ class Dataset {
          * Action and each Action in this Dataset to find the nearest neighbors
          * Returns the guess for the classification
          */
-        std::string guess_classification(const Action&, int);
+        std::string guess_classification(const Action&, int, bool);
 
         /**
          * Inserts the distance and label into the respective vectors based on

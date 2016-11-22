@@ -18,6 +18,7 @@
 
 #define NUM_JOINTS 8
 #define NUM_BINS 10
+#define DEFAULT_K 3
 
 using std::string;
 using std::cin;
@@ -113,9 +114,15 @@ string confirm_guess(const string& guess) {
  * Displays error when incorrect command line args given
  */
 void print_err() {
-    ROS_ERROR("Usage: rosrun lfd_actions knn -src <dataset file>"
-              "\n\t\t\t\t(Optional)\n\t\t\t\t -super <true/false>"
-              "\n\t\t\t\t-p");
+    cout << "knn: Missing required command line argument" << endl
+         << "Usage: rosrun lfd_actions knn -d <file>" << endl
+         << "Options:" << endl
+         << "  -h           Print this help message." << endl
+         << "  -v           Optional verbose flag." << endl
+         << "  -s           Optional supervise flag." << endl
+         << "  -d <file>    The dataset file." << endl
+         << "  -t <file>    The test file." << endl
+         << "  -k <int>     The number of nearest neighbors" << endl;
 }
 
 void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& cart) {
@@ -154,7 +161,7 @@ void cart_cb(const PoseStamped::ConstPtr& msg) {
 
 int main(int argc, char** argv) {
     // Initializing the ros node
-    ros::init(argc, argv, "arff_recorder");
+    ros::init(argc, argv, "knn");
     ros::NodeHandle n;
     ros::Rate loop_rate(20);
 
@@ -172,24 +179,36 @@ int main(int argc, char** argv) {
     ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 100, cart_cb);
 
     // Getting command line arguments
-    string dataset_name;
-    bool supervised = false;
-    bool found_d = false;
-    bool found_p = false;
+    string dataset_name = "";;
+    string testfile_name = "";
+    bool supervise = false;
+    bool verbose = false;
+    int k = DEFAULT_K;
     for (int i = 1; i < argc; i++) {
         string argv_str(argv[i]);
-        found_p = argv_str == "-p";
-        if (argv_str == "-src" || argv_str == "--source") {
+        verbose = verbose || argv_str == "-v";
+        supervise = supervise || argv_str == "-s";
+
+        if (argv_str == "-h") {
+            print_err();
+            return 1;
+        } else if (argv_str == "-d") {
             if (i + 1 <= argc) {
                 dataset_name = argv[++i];
-                found_d = true;
             } else {
                 print_err();
                 return 1;
             }
-        } else if (argv_str == "-super" || argv_str == "--supervise") {
+        } else if (argv_str == "-t") {
             if (i + 1 <= argc) {
-                supervised = string(argv[++i]) == "true";
+                testfile_name = argv[++i];
+            } else {
+                print_err();
+                return 1;
+            }
+        } else if (argv_str == "-k") {
+            if (i + 1 <= argc) {
+                k = atoi(argv[++i]);
             } else {
                 print_err();
                 return 1;
@@ -198,26 +217,21 @@ int main(int argc, char** argv) {
     }
 
     // Checking that a dataset file has been specified
-    if (!found_d) {
+    if (dataset_name == "") {
         print_err();
         return 1;
     }
 
     // Outputing command line args
     ROS_INFO("dataset path: %s", dataset_name.c_str());
-    if (supervised) {
+    if (supervise) {
         ROS_INFO("supervised = true");
     } else {
         ROS_INFO("supervised = false");
     }
 
     // Building the dataset
-    Dataset dataset(dataset_name, 3);
-
-    // Printing the dataset if -p in commandline args
-    if (found_p) {
-        //dataset.print_dataset();
-    }
+    Dataset dataset(dataset_name, k);
 
     bool again = true;
     while (again) {
@@ -245,13 +259,13 @@ int main(int argc, char** argv) {
         Action ac_offset(pose_list);
 
         // Guessing the classification
-        string guess = dataset.guess_classification(ac_offset);
+        string guess = dataset.guess_classification(ac_offset, verbose);
 
         // Print out the guess for the action
         print_guess(guess);
 
         // If supervised checking guess with user
-        if (supervised) {
+        if (supervise) {
             ac.set_label(confirm_guess(guess));
             dataset.update(ac);
         }
