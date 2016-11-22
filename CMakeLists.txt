@@ -4,7 +4,7 @@ project(lfd_actions)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS 
+find_package(catkin REQUIRED COMPONENTS
     roscpp
     sensor_msgs
     geometry_msgs
@@ -137,6 +137,9 @@ include_directories(
 ## Declare a C++ executable
 add_executable(knn src/knn.cpp src/action.cpp src/dtw.cpp)
 target_link_libraries(knn ${catkin_LIBRARIES})
+
+add_executable(recorder src/recorder.cpp src/action.cpp src/dtw.cpp)
+target_link_libraries(recorder ${catkin_LIBRARIES})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above

@@ -37,10 +37,10 @@ using std::list;
 const string ARM_TOPIC = "/joint_states";
 const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
 
-// Vectors used to record the action in callback
-list<Pose> pose_list;
-vector<Pose> poses;
-vector<JointState> joints;
+// lists used to record the action in callback
+list<Pose> poses;
+list<JointState> joints;
+list<ros::Time> times;
 
 /**
  * Reads a character without blocking execution
@@ -128,22 +128,16 @@ void print_err() {
 }
 
 void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& cart) {
-    // Pushing the joint states
+    // Getting the names
     vector<string> names = joint->name;
+
     // Checking that received the appropriate number of joints
     if (names.size() == 8) {
+        // Pushing the values
         joints.push_back(*joint);
-        // Pushing the cartesian pose
         poses.push_back(cart->pose);
+        times.push_back(cart->header.stamp);
     }
-
-}
-
-/**
- * Callback to receive a PoseStamped and recored the pose
- */
-void cart_cb(const PoseStamped::ConstPtr& msg) {
-    pose_list.push_back(msg->pose);
 }
 
 void perform_classification(Dataset& dataset, Action& ac, Action& ac_offset,
@@ -171,6 +165,7 @@ void record(Dataset& dataset, bool verbose, bool supervise) {
         // Clearing the vectors
         poses.clear();
         joints.clear();
+        times.clear();
 
         // Waiting to record
         cout << "Press [Enter] to start";
@@ -188,8 +183,8 @@ void record(Dataset& dataset, bool verbose, bool supervise) {
         cout << endl;
 
         // Creating the recorded action
-        Action ac(pose_list);
-        Action ac_offset(pose_list);
+        Action ac(poses, joints, times);
+        Action ac_offset(poses, joints, times);
         
         // Performing the classification
         perform_classification(dataset, ac, ac_offset, verbose, supervise);
@@ -223,19 +218,6 @@ int main(int argc, char** argv) {
     // Initializing the ros node
     ros::init(argc, argv, "knn");
     ros::NodeHandle n;
-
-/*
-    // Creating the subscribers
-    message_filters::Subscriber<JointState> arm_sub(n, ARM_TOPIC, 1000);
-    message_filters::Subscriber<PoseStamped> cart_sub(n, CART_TOPIC, 1000);
-
-    typedef message_filters::sync_policies::ApproximateTime<JointState, PoseStamped> policy;
-    message_filters::Synchronizer<policy> sync(policy(100), arm_sub, cart_sub);
-    sync.registerCallback(boost::bind(&callback, _1, _2));
-    */
-
-    // Creating the subscriber
-    ros::Subscriber cart_sub = n.subscribe(CART_TOPIC, 100, cart_cb);
 
     // Getting command line arguments
     string dataset_name = "";;
@@ -296,6 +278,15 @@ int main(int argc, char** argv) {
     if (testfile_name != "") {
         test_file(dataset, testfile_name, verbose, supervise);
     } else {
+        // Creating the subscribers
+        message_filters::Subscriber<JointState> arm_sub(n, ARM_TOPIC, 100);
+        message_filters::Subscriber<PoseStamped> cart_sub(n, CART_TOPIC, 100);
+        typedef message_filters::sync_policies::ApproximateTime<
+                JointState, PoseStamped> policy;
+        message_filters::Synchronizer<policy> sync(policy(10), arm_sub, cart_sub);
+        sync.registerCallback(boost::bind(&callback, _1, _2));
+
+        // Recording actions
         record(dataset, verbose, supervise);
     }
 
