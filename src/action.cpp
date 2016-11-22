@@ -34,6 +34,40 @@ Action::Action(const std::list<geometry_msgs::Pose>& input) {
     }
 }
 
+
+Action::Action(const std::list<geometry_msgs::Pose>& a, const std::list<sensor_msgs::JointState> b, const std::list<ros::Time>& c) {
+
+
+    for(list<Pose>::const_iterator a_it = a.begin(); a_it != a.end(); a_it++) {
+        poses.push_back(*a_it);
+    }
+
+
+    for(list<JointState>::const_iterator b_it = b.begin(); b_it != b.end(); b_it++) {
+        joints.push_back(*b_it);
+    }
+
+    for(list<Time>::const_iterator c_it = c.begin(); c_it != c.end(); c_it++) {
+        times.push_back(*c_it);
+    }
+
+}
+
+
+void print_jointstate(std::ofstream& os, const sensor_msgs::JointState& b) const {
+
+	int i;
+
+	for(i = 0; i < NUM_JOINTS; i++) {	
+
+		os << b.postion[i] << ",";
+
+		os << b.velocity[i]<< ",";
+
+		os << b.effort[i]<< "," ;
+	}
+}
+
 string Action::get_label() const {
     return label;
 }
@@ -56,9 +90,15 @@ double Action::get_dist(const Action& currentAction) const {
 
 void Action::print(ofstream& os) const {
     // Adding to dataset file
-    for (pose_cit pose_it = poses.begin(); pose_it != poses.end(); pose_it++) {
+
+    int i;
+    for (i = 0; i < poses.size(); i++) {
+	
+	os << times[i] << ",";
+	print_joinststate(os, i);
         // Writing the pose
         print_pose(os, *pose_it);
+	
     }
     // Writing the label
     os << label << endl;
