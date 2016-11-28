@@ -113,13 +113,16 @@ double DTW::quaternion_distance(const Quaternion& c, const Quaternion& d) {
 double DTW::joint_distance(const JointState& x, const JointState& y) {
     double pos_diff = 0;
     double vel_diff = 0;
-    double eff_diff = 0;
 
     for (int i = 0; i < 8; i++) {
-        pos_diff += abs(x.position[i] - y.position[i]);
+        pos_diff += pos_dist(x.position[i], y.position[i]);
         vel_diff += abs(x.velocity[i] - y.velocity[i]);
-        eff_diff += abs(x.effort[i] - y.effort[i]);
     }
 
-    return pos_diff + vel_diff + eff_diff;
+    return pos_diff + vel_diff;
+}
+
+double DTW::pos_dist(double x, double y) {
+    double phi = abs(y - x) % 2 * M_PI;
+    return (phi > M_PI) ? 2 * M_PI - phi : phi;
 }

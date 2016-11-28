@@ -48,6 +48,8 @@ class DTW {
         static double quaternion_distance(const geometry_msgs::Quaternion&, const geometry_msgs::Quaternion&);
 
         static double joint_distance(const sensor_msgs::JointState&, const sensor_msgs::JointState&);
+
+        static double pos_dist(double, double);
 };
 
 #endif
