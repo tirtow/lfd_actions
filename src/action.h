@@ -51,13 +51,17 @@ class Action {
          * Gets an iterator to the beginning of poses
          * Returns poses.begin()
          */
-        pose_cit begin() const;
+        pose_cit pose_begin() const;
 
         /**
          * Gets an iterator to the end of poses
          * Returns poses.end()
          */
-        pose_cit end() const;
+        pose_cit pose_end() const;
+
+        std::vector<sensor_msgs::JointState>::const_iterator joint_begin() const;
+
+        std::vector<sensor_msgs::JointState>::const_iterator joint_end() const;
 
         /**
          * Calculates the distance between this Action and another Action
@@ -110,6 +114,8 @@ class Action {
          * Gets the Pose from a vector of values
          */
         geometry_msgs::Pose get_pose(const std::vector<double>&, int);
+
+        sensor_msgs::JointState get_joint_state(const std::vector<double>&, int);
 
         /**
          * Calculates the distance between two joint_states

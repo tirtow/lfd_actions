@@ -3,6 +3,7 @@
 #include <cmath>
 #include <Eigen/Dense>
 #include <eigen_conversions/eigen_msg.h>
+#include <ros/ros.h>
 
 #define NUM_JOINTS 8
 #define NUM_BINS 10
@@ -22,8 +23,9 @@ Action::Action(const string& line) {
     label = split_line(line, values);
 
     // Looping through all the values
-    for (int index = 25; index < values.size(); index += 32) {
-        poses.push_back(get_pose(values, index));
+    for (int index = 1; index < values.size(); index += 32) {
+        joints.push_back(get_joint_state(values, index));
+        poses.push_back(get_pose(values, index + 24));
     }
 }
 
@@ -77,12 +79,20 @@ int Action::size() const {
     return poses.size();
 }
 
-Action::pose_cit Action::begin() const {
+Action::pose_cit Action::pose_begin() const {
     return poses.begin();
 }
 
-Action::pose_cit Action::end() const {
+Action::pose_cit Action::pose_end() const {
     return poses.end();
+}
+
+vector<JointState>::const_iterator Action::joint_begin() const {
+    return joints.begin();
+}
+
+vector<JointState>::const_iterator Action::joint_end() const {
+    return joints.end();
 }
 
 double Action::get_dist(const Action& currentAction) const {
@@ -151,6 +161,18 @@ string Action::split_line(const string& line, vector<double>& values) {
     string classification(begin, line.end());
 
     return classification;
+}
+
+JointState Action::get_joint_state(const std::vector<double>& values, int i) {
+    JointState js;
+
+    for (int j = 0; j < 24; j += 3) {
+        js.position.push_back(values[i + j]);
+        js.velocity.push_back(values[i + j+ 1]);
+        js.effort.push_back(values[i + j + 2]);
+    }
+
+    return js;
 }
 
 Pose Action::get_pose(const std::vector<double>& values, int i) {

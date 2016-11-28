@@ -23,7 +23,7 @@ Dataset::Dataset(const string& file, int k = 1) : base_k(k) {
         getline(is, line);
         if (line != "") {
         Action ac(line);
-        base = ac.begin()->position;
+        base = ac.pose_begin()->position;
        // ac.offset(base);
         action_set.push_back(ac);
 

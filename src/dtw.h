@@ -5,6 +5,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
+#include <sensor_msgs/JointState.h>
 
 class DTW {
     public:
@@ -32,7 +33,7 @@ class DTW {
          * Calculates the distance between two Poses
          * Returns the distance
          */
-        static double distance(const geometry_msgs::Pose&, const geometry_msgs::Pose&);
+        static double distance(const geometry_msgs::Pose&, const geometry_msgs::Pose&, const sensor_msgs::JointState&, const sensor_msgs::JointState&);
 
         /**
          * Calculates the distance between two points using euclidean distance
@@ -45,6 +46,8 @@ class DTW {
          * Returns the distance
          */
         static double quaternion_distance(const geometry_msgs::Quaternion&, const geometry_msgs::Quaternion&);
+
+        static double joint_distance(const sensor_msgs::JointState&, const sensor_msgs::JointState&);
 };
 
 #endif
