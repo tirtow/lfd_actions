@@ -26,7 +26,7 @@ Action::Action(const string& line) {
     for (int index = 0; index < values.size(); index += 32) {
         times.push_back(ros::Time(values[index]));
         joints.push_back(get_joint_state(values, index + 1));
-        poses.push_back(get_pose(values, index + 24));
+        poses.push_back(get_pose(values, index + 25));
     }
 }
 
