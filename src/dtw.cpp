@@ -119,7 +119,8 @@ double DTW::joint_distance(const JointState& x, const JointState& y) {
         vel_diff += abs(x.velocity[i] - y.velocity[i]);
     }
 
-    return pos_diff + vel_diff;
+    //return pos_diff + vel_diff;
+    return 0;
 }
 
 double DTW::pos_dist(double x, double y) {
