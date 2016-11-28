@@ -23,8 +23,9 @@ Action::Action(const string& line) {
     label = split_line(line, values);
 
     // Looping through all the values
-    for (int index = 1; index < values.size(); index += 32) {
-        joints.push_back(get_joint_state(values, index));
+    for (int index = 0; index < values.size(); index += 32) {
+        times.push_back(ros::Time(values[index]));
+        joints.push_back(get_joint_state(values, index + 1));
         poses.push_back(get_pose(values, index + 24));
     }
 }
@@ -107,8 +108,9 @@ void Action::print(ofstream& os) const {
 	
 	os << times[i] << ",";
 	print_jointstate(os, joints[i]);
-        // Writing the pose
-        print_pose(os, poses[i]);
+    
+    // Writing the pose
+    print_pose(os, poses[i]);
 	
     }
     // Writing the label
