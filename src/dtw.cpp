@@ -81,8 +81,10 @@ double DTW::min(double x, double y, double z) {
 
 double DTW::distance(const Pose& p1, const Pose& p2,
         const JointState& js1, const JointState& js2) {
+	//double jd = joint_distance(js1, js2);
+	//ROS_INFO("%f", jd);
     return position_distance(p1.position, p2.position)
-            + quaternion_distance(p1.orientation, p2.orientation)
+            + quaternion_distance(p1.orientation, p2.orientation);
             + joint_distance(js1, js2);
 }
 
@@ -109,12 +111,12 @@ double DTW::quaternion_distance(const Quaternion& c, const Quaternion& d) {
 }
 
 double DTW::joint_distance(const JointState& x, const JointState& y) {
-    double pos_diff = (x.position[6] - y.position[6])
-            + (x.position[7] - y.position[7]);
-    double vel_diff = (x.velocity[6] - y.velocity[6])
-            + (x.velocity[7] - y.velocity[7]);
-    double eff_diff = (x.effort[6] - y.effort[6])
-            + (x.effort[7] - y.effort[7]);
+    double pos_diff = abs((x.position[6] - y.position[6])
+            + (x.position[7] - y.position[7]));
+    double vel_diff = abs((x.velocity[6] - y.velocity[6])
+            + (x.velocity[7] - y.velocity[7]));
+    double eff_diff = abs((x.effort[6] - y.effort[6])
+            + (x.effort[7] - y.effort[7]));
 
     return pos_diff + vel_diff + eff_diff;
 }
