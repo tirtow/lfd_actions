@@ -5,6 +5,9 @@
 #include <vector>
 #include <ros/ros.h>
 
+#define NUM_JOINTS 8
+#define JOINT_WEIGHT 10
+
 using geometry_msgs::Point;
 using geometry_msgs::Pose;
 using geometry_msgs::Quaternion;
@@ -16,24 +19,23 @@ double DTW::min_diff(const Action& x, const Action& y) {
     int cols = y.size();
     double diffs[rows][cols];
     double costs[rows][cols];
+
     // Getting the differences
-    //std::cout << "Items in this:  " << rows << std::endl;
-    //std::cout << "Items in other (" << y.get_label() << "): " << cols << std::endl;
     Action::pose_cit x_poses = x.pose_begin();
-    vector<JointState>::const_iterator x_joints = x.joint_begin();
+    Action::joint_cit x_joints = x.joint_begin();
 
-    for (int row = 0; row < x.size(); row++) {
+    for (int row = 0; row < rows; row++) {
         Action::pose_cit y_poses = y.pose_begin();
-        vector<JointState>::const_iterator y_joints = y.joint_begin();
+        Action::joint_cit y_joints = y.joint_begin();
 
-        for (int col = 0; col < y.size(); col++) {
-            diffs[row][col] = distance(*x_poses, *y_poses++, *x_joints, *y_joints++);
+        for (int col = 0; col < cols; col++) {
+            diffs[row][col] = distance(*x_poses, *y_poses++,
+                    *x_joints, *y_joints++);
         }
 
         x_poses++;
         x_joints++;
     }
-    //DTW::get_diffs(x, y, (double **) diffs);
 
     // Setting the first row
     for (int c = 0; c < cols; c++) {
@@ -49,26 +51,13 @@ double DTW::min_diff(const Action& x, const Action& y) {
     for (int r = 1; r < rows; r++) {
         for (int c = 1; c < cols; c++) {
             costs[r][c] = diffs[r][c]
-                    + DTW::min(diffs[r - 1][c - 1], diffs[r - 1][c], diffs[r][c - 1]);
+                    + DTW::min(diffs[r - 1][c - 1], diffs[r - 1][c],
+                            diffs[r][c - 1]);
         }
     }
 
     // Returning the last grid
     return costs[rows - 1][cols - 1];
-}
-
-void DTW::get_diffs(const Action& x, const Action& y, double** diffs) {
-    Action::pose_cit x_poses = x.pose_begin();
-    vector<JointState>::const_iterator x_joints = x.joint_begin();
-
-    for (int row = 0; row < x.size(); row++) {
-        Action::pose_cit y_poses = y.pose_begin();
-        vector<JointState>::const_iterator y_joints = y.joint_begin();
-
-        for (int col = 0; col < y.size(); col++) {
-            diffs[row][col] = distance(*x_poses, *y_poses, *x_joints, *y_joints);
-        }
-    }
 }
 
 double DTW::min(double x, double y, double z) {
@@ -81,8 +70,6 @@ double DTW::min(double x, double y, double z) {
 
 double DTW::distance(const Pose& p1, const Pose& p2,
         const JointState& js1, const JointState& js2) {
-	//double jd = joint_distance(js1, js2);
-	//ROS_INFO("%f", jd);
     return position_distance(p1.position, p2.position)
             + quaternion_distance(p1.orientation, p2.orientation)
             + joint_distance(js1, js2);
@@ -113,12 +100,11 @@ double DTW::quaternion_distance(const Quaternion& c, const Quaternion& d) {
 double DTW::joint_distance(const JointState& x, const JointState& y) {
     double pos_diff = 0;
 
-    for (int i = 6; i < 8; i++) {
+    for (int i = 6; i < NUM_JOINTS; i++) {
         pos_diff += pos_dist(x.position[i], y.position[i]);
     }
 
-    return pos_diff * 100;
-    //return 0;
+    return pos_diff * JOINT_WEIGHT;
 }
 
 double DTW::pos_dist(double x, double y) {
@@ -133,5 +119,5 @@ double DTW::pos_dist(double x, double y) {
         diff += two_pi;
     }
 
-    return diff;//(diff > M_PI) ? two_pi - diff : diff;
+    return diff;
 }

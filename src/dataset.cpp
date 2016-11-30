@@ -21,27 +21,28 @@ Dataset::Dataset(const string& file, int k = 1) : base_k(k) {
         // Getting the line
         string line;
         getline(is, line);
+
         if (line != "") {
-        Action ac(line);
-        base = ac.pose_begin()->position;
-       // ac.offset(base);
-        action_set.push_back(ac);
+            // Getting the base Action to offset the others
+            Action ac(line);
+            base = ac.pose_begin()->position;
+            action_set.push_back(ac);
 
-        // Looping while not at end of file
-        while (is) {
-            // Getting the line
-            string line;
-            getline(is, line);
+            // Looping while not at end of file
+            while (is) {
+                // Getting the line
+                string line;
+                getline(is, line);
 
-            // If line not blank build the action and push it
-            if (line != "") {
-                Action ac(line);
-                ac.offset(base);
-                action_set.push_back(ac);
+                // If line not blank build the action and push it
+                if (line != "") {
+                    Action ac(line);
+                    ac.offset(base);
+                    action_set.push_back(ac);
+                }
             }
         }
     }
-}
 }
 
 Dataset::~Dataset() {

@@ -7,6 +7,10 @@
 #include <geometry_msgs/Quaternion.h>
 #include <sensor_msgs/JointState.h>
 
+/**
+ * Class to calculate the minimum difference between two Actions
+ * using dynamic time warping
+ */
 class DTW {
     public:
         /**
@@ -18,12 +22,6 @@ class DTW {
 
     private:
         /**
-         * Generates the difference between every point in both Actions
-         * using Action::get_dist and stores them in the 2D double array
-         */
-        static void get_diffs(const Action&, const Action&, double**);
-
-        /**
          * Gets the minium value between three doubles
          * Returns the minimum value
          */
@@ -33,21 +31,26 @@ class DTW {
          * Calculates the distance between two Poses
          * Returns the distance
          */
-        static double distance(const geometry_msgs::Pose&, const geometry_msgs::Pose&, const sensor_msgs::JointState&, const sensor_msgs::JointState&);
+        static double distance(const geometry_msgs::Pose&,
+                const geometry_msgs::Pose&, const sensor_msgs::JointState&,
+                const sensor_msgs::JointState&);
 
         /**
          * Calculates the distance between two points using euclidean distance
          * Returns the distance
          */
-        static double position_distance(const geometry_msgs::Point&, const geometry_msgs::Point&);
+        static double position_distance(const geometry_msgs::Point&,
+                const geometry_msgs::Point&);
 
         /**
          * Calculates the distance between two quaternions
          * Returns the distance
          */
-        static double quaternion_distance(const geometry_msgs::Quaternion&, const geometry_msgs::Quaternion&);
+        static double quaternion_distance(const geometry_msgs::Quaternion&,
+                const geometry_msgs::Quaternion&);
 
-        static double joint_distance(const sensor_msgs::JointState&, const sensor_msgs::JointState&);
+        static double joint_distance(const sensor_msgs::JointState&,
+                const sensor_msgs::JointState&);
 
         static double pos_dist(double, double);
 };

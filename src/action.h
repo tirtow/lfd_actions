@@ -12,14 +12,23 @@
 #ifndef GUARD_action_h
 #define GUARD_action_h
 
+/**
+ * Class to represent a recorded Action from the arm
+ * Stores the times, joint states, poses, and the label for the
+ * Action
+ */
 class Action {
     public:
         // List types
         typedef std::vector<geometry_msgs::Pose> pose_list;
+        typedef std::vector<sensor_msgs::JointState> joint_list;
+        typedef std::vector<ros::Time> time_list;
         typedef std::vector<Action> action_list;
 
         // List iterator types
         typedef pose_list::const_iterator pose_cit;
+        typedef joint_list::const_iterator joint_cit;
+        typedef time_list::const_iterator time_cit;
         typedef action_list::const_iterator action_cit;
 
         /**
@@ -29,11 +38,12 @@ class Action {
         Action(const std::string&);
 
         /**
-         * Builds an action given a list of poses recorded for the action
+         * Builds an Action given a list of cartesian poses, joint states,
+         * and times
          */
-        Action(const std::list<geometry_msgs::Pose>&);
-
-        Action(const std::list<geometry_msgs::Pose>&, const std::list<sensor_msgs::JointState>, const std::list<ros::Time>&);
+        Action(const std::list<geometry_msgs::Pose>&,
+               const std::list<sensor_msgs::JointState>,
+               const std::list<ros::Time>&);
 
         /**
          * Gets the label for this Action
@@ -59,9 +69,17 @@ class Action {
          */
         pose_cit pose_end() const;
 
-        std::vector<sensor_msgs::JointState>::const_iterator joint_begin() const;
+        /**
+         * Gets an iterator to the begining of joints
+         * Returns joints.begin()
+         */
+        joint_cit joint_begin() const;
 
-        std::vector<sensor_msgs::JointState>::const_iterator joint_end() const;
+        /**
+         * Gets an iterator to the end of joints
+         * Returns joints.end()
+         */
+        joint_cit joint_end() const;
 
         /**
          * Calculates the distance between this Action and another Action
@@ -86,16 +104,20 @@ class Action {
 
     private:
         std::string label;
-        std::vector<geometry_msgs::Pose> poses;
-        std::vector<ros::Time> times;
-        std::vector<sensor_msgs::JointState> joints;
+        time_list times;
+        pose_list poses;
+        joint_list joints;
 
         /**
          * Prints the pose of this Action to the specified output stream
          */
         void print_pose(std::ofstream&, const geometry_msgs::Pose&) const;
 
-        void print_jointstate(std::ofstream&, const sensor_msgs::JointState&) const;
+        /**
+         * Prints the passed joint state to the specified output stream
+         */
+        void print_jointstate(std::ofstream&,
+                const sensor_msgs::JointState&) const;
 
         /**
          * Gets whether or not a character is part of a number
@@ -115,25 +137,10 @@ class Action {
          */
         geometry_msgs::Pose get_pose(const std::vector<double>&, int);
 
+        /**
+         * Gets the joint state from a vector of values
+         */
         sensor_msgs::JointState get_joint_state(const std::vector<double>&, int);
-
-        /**
-         * Calculates the distance between two joint_states
-         * Returns the distance
-         */
-        //double joint_dist(const joint_state&, const joint_state&) const;
-
-        /**
-         * Calculates the euclidean distance between two Points
-         * Returns the distance
-         */
-        double euclidean_dist(const geometry_msgs::Point&, const geometry_msgs::Point&) const;
-
-        /**
-         * Calculates the distance between two Quaternions
-         * Returns the distance
-         */
-        double quarterion_dist(const geometry_msgs::Quaternion&, const geometry_msgs::Quaternion&) const;
 
 };
 

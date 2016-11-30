@@ -227,13 +227,13 @@ int main(int argc, char** argv) {
     int k = DEFAULT_K;
     for (int i = 1; i < argc; i++) {
         string argv_str(argv[i]);
-        verbose = verbose || argv_str == "-v";
-        supervise = supervise || argv_str == "-s";
 
         if (argv_str == "-h") {
+            // Print help message and stop
             print_err();
             return 1;
         } else if (argv_str == "-d") {
+            // Getting the dataset
             if (i + 1 <= argc) {
                 dataset_name = argv[++i];
             } else {
@@ -241,6 +241,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
         } else if (argv_str == "-t") {
+            // Getting the test file
             if (i + 1 <= argc) {
                 testfile_name = argv[++i];
             } else {
@@ -248,12 +249,17 @@ int main(int argc, char** argv) {
                 return 1;
             }
         } else if (argv_str == "-k") {
+            // Setting the number of nearest neighbors
             if (i + 1 <= argc) {
                 k = atoi(argv[++i]);
             } else {
                 print_err();
                 return 1;
             }
+        } else {
+            // Other flags
+            verbose = verbose || argv_str == "-v";
+            supervise = supervise || argv_str == "-s";
         }
     }
 

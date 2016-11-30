@@ -49,15 +49,9 @@ class Dataset {
         void update(Action&);
 
     private:
-        // The number of neighbors to consider for k-NN
         int base_k;
-
-        // The output file stream for the dataset
         std::ofstream os;
-
-        // The list of actions that makes up the dataset
         Action::action_list action_set;
-
 		geometry_msgs::Point base;
 
         /**
