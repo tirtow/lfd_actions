@@ -89,6 +89,11 @@ string Dataset::guess_classification(Action& ac, bool verbose) {
 }
 
 string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
+    if (k == 0) {
+        // Base case: empty dataset
+        return "";
+    }
+
     vector<double> closest_dist;
     vector<string> closest_str;
     int count= 1;
