@@ -1,6 +1,8 @@
 #include "dataset.h"
 #include <cmath>
 #include <geometry_msgs/Point.h>
+#include <ros/ros.h>
+#include <iostream>
 
 using std::ifstream;
 using std::ofstream;
@@ -12,7 +14,9 @@ using std::string;
 using std::map;
 using geometry_msgs::Point;
 
-Dataset::Dataset(const string& file, int k = 1) : base_k(k) {
+Dataset::Dataset(const string& file, bool verbose, int k = 1) : base_k(k) {
+    map<string, int> counts;
+
     // Setting up streams
     ifstream is(file.c_str());
     os.open(file.c_str(), std::ios_base::app);
@@ -28,6 +32,10 @@ Dataset::Dataset(const string& file, int k = 1) : base_k(k) {
             base = ac.pose_begin()->position;
             action_set.push_back(ac);
 
+            if (verbose) {
+                counts[ac.get_label()]++;
+            }
+
             // Looping while not at end of file
             while (is) {
                 // Getting the line
@@ -39,9 +47,22 @@ Dataset::Dataset(const string& file, int k = 1) : base_k(k) {
                     Action ac(line);
                     ac.offset(base);
                     action_set.push_back(ac);
+
+                    if (verbose) {
+                        counts[ac.get_label()]++;
+                    }
                 }
             }
         }
+    }
+
+    if (verbose) {
+        for (map<string, int>::const_iterator it = counts.begin();
+                it != counts.end(); it++) {
+            ROS_INFO("%s: %d", it->first.c_str(), it->second);
+        }
+
+        std::cout << std::endl;
     }
 }
 

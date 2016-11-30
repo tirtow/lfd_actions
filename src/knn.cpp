@@ -278,7 +278,7 @@ int main(int argc, char** argv) {
     }
 
     // Building the dataset
-    Dataset dataset(dataset_name, k);
+    Dataset dataset(dataset_name, verbose, k);
 
     // Checking whether running a test file or recording actions
     if (testfile_name != "") {

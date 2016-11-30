@@ -23,7 +23,7 @@ class Dataset {
          * Takes an int for the number of nearest neighbors (k) to consider in
          * the k-NN classification
          */
-        Dataset(const std::string&, int);
+        Dataset(const std::string&, bool, int);
 
         /**
          * Destructor to close the ofstream used to write
