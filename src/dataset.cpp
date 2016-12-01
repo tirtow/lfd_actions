@@ -96,6 +96,7 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
 
     vector<double> closest_dist;
     vector<string> closest_str;
+    vector<int> closest_num;
     int count= 1;
 
     if (verbose) {
@@ -110,24 +111,38 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
 
         // If verbose printing output
         if (verbose) {
-            ROS_INFO("Action %d (%s): %d items: %f", count++,
+            ROS_INFO("Action %d (%s): %d items: %f", count,
                     it->get_label().c_str(), it->size(), dist);
         }
 
         // Checking to place distance
         string label = it->get_label();
-        bool placed = insert_dist(dist, label, closest_dist, closest_str);
+        bool placed = insert_dist(dist, label, closest_dist, closest_str, closest_num, count);
 
         // Checking conditions of vectors
         if (!placed && closest_dist.size() < k) {
             // Have less than k elements, adding to end
             closest_dist.push_back(dist);
             closest_str.push_back(label);
+            closest_num.push_back(count);
         } else if (closest_dist.size() > k) {
             // Have more than k elements, deleting last one
             closest_dist.pop_back();
             closest_str.pop_back();
+            closest_num.pop_back();
         }
+
+        count++;
+    }
+
+    // Printing closest actions
+    if (verbose) {
+        for (int i = 0; i < closest_num.size(); i++) {
+            ROS_INFO("%d.) Action %d: %f (%s)", i + 1, closest_num[i],
+                    closest_dist[i], closest_str[i].c_str());
+        }
+
+        cout << endl;
     }
 
     // Getting the guess
@@ -146,10 +161,12 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
 }
 
 bool Dataset::insert_dist(double dist, const string& label,
-        vector<double>& closest_dist, vector<string>& closest_str) {
+        vector<double>& closest_dist, vector<string>& closest_str,
+        vector<int>& closest_num, int count) {
     bool found = false;
     vector<double>::iterator dist_it = closest_dist.begin();
     vector<string>::iterator str_it = closest_str.begin();
+    vector<int>::iterator ac_it = closest_num.begin();
 
     // Looping through closest actions to see if need to place
     while (!found && dist_it != closest_dist.end()) {
@@ -157,11 +174,13 @@ bool Dataset::insert_dist(double dist, const string& label,
         if (dist < *dist_it) {
             closest_dist.insert(dist_it, dist);
             closest_str.insert(str_it, label);
+            closest_num.insert(ac_it, count);
             found = true;
         }
 
         dist_it++;
         str_it++;
+        ac_it++;
     }
 
     return found;

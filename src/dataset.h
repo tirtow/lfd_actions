@@ -69,7 +69,7 @@ class Dataset {
          * Returns whether or not the value was inserted
          */
         bool insert_dist(double, const std::string&, std::vector<double>&,
-                std::vector<std::string>&);
+                std::vector<std::string>&, std::vector<int>&, int);
 
         /**
          * Creates a map of the values in the passed vector to the number of
