@@ -18,8 +18,8 @@
 #include "dtw.h"
 
 #define NUM_JOINTS 8
-#define NUM_BINS 10
 #define DEFAULT_K 3
+#define THRESHOLD 0.05
 
 using std::string;
 using std::cin;
@@ -132,16 +132,33 @@ void print_err() {
 }
 
 double get_joint_diff(const JointState new_jointstate) {
+    double diff = 0;
+    for (int i = 0; i < NUM_JOINTS; i++) {
+        diff += new_jointstate.position[i] - prev_jointstate.position[i];
+        diff += new_jointstate.velocity[i] - prev_jointstate.velocity[i];
+        diff += new_jointstate.effort[i] - prev_jointstate.effort[i];
+    }
 
+    return diff;
 }
 
 double get_pose_diff(const Pose new_pose) {
+    double diff = 0;
+    
+    diff += new_pose.position.x - prev_pose.position.x;
+    diff += new_pose.position.y - prev_pose.position.y;
+    diff += new_pose.position.z - prev_pose.position.z;
 
+    diff += new_pose.orientation.x - prev_pose.orientation.x;
+    diff += new_pose.orientation.y - prev_pose.orientation.y;
+    diff += new_pose.orientation.z - prev_pose.orientation.z;
+    diff += new_pose.orientation.w - prev_pose.orientation.w;
+
+    return diff;
 }
 
 double get_difference(const JointState new_jointstate, const Pose new_pose) {
-    double diff = 0;
-    
+    return abs(get_joint_diff(new_jointstate) + get_pose_diff(new_pose));
 }
 
 void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& cart) {
@@ -154,6 +171,12 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
         joints.push_back(*joint);
         poses.push_back(cart->pose);
         times.push_back(cart->header.stamp);
+
+        // Getting the difference
+        double diff = get_difference(*joint, cart->pose);
+        if (diff < THRESHOLD) {
+            ROS_INFO("Difference: %f", diff);
+        }
     }
 }
 
