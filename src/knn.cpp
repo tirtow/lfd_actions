@@ -42,6 +42,10 @@ list<Pose> poses;
 list<JointState> joints;
 list<ros::Time> times;
 
+// Values to compare previous
+JointState prev_jointstate;
+Pose prev_pose;
+
 /**
  * Reads a character without blocking execution
  * Returns the read character
@@ -125,6 +129,19 @@ void print_err() {
          << "  -d <file>    The dataset file." << endl
          << "  -t <file>    The test file." << endl
          << "  -k <int>     The number of nearest neighbors" << endl;
+}
+
+double get_joint_diff(const JointState new_jointstate) {
+
+}
+
+double get_pose_diff(const Pose new_pose) {
+
+}
+
+double get_difference(const JointState new_jointstate, const Pose new_pose) {
+    double diff = 0;
+    
 }
 
 void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& cart) {
