@@ -32,6 +32,7 @@ Dataset::Dataset(const string& file, bool verbose, int k = 1) : base_k(k) {
             base = ac.pose_begin()->position;
             action_set.push_back(ac);
 
+            // If verbose sum the number of each label
             if (verbose) {
                 counts[ac.get_label()]++;
             }
@@ -48,6 +49,7 @@ Dataset::Dataset(const string& file, bool verbose, int k = 1) : base_k(k) {
                     ac.offset(base);
                     action_set.push_back(ac);
 
+                    // If verbose sum the number of each label
                     if (verbose) {
                         counts[ac.get_label()]++;
                     }
@@ -56,6 +58,7 @@ Dataset::Dataset(const string& file, bool verbose, int k = 1) : base_k(k) {
         }
     }
 
+    // If verbose print out the total number of each action in the dataset
     if (verbose) {
         for (map<string, int>::const_iterator it = counts.begin();
                 it != counts.end(); it++) {
@@ -94,11 +97,13 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
         return "";
     }
 
+    // vectors to store the k closest values
     vector<double> closest_dist;
     vector<string> closest_str;
     vector<int> closest_num;
     int count= 1;
 
+    // If verbose print out the size of the recorded action
     if (verbose) {
         ROS_INFO("Recorded action size: %d", ac.size());
     }
@@ -109,7 +114,7 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
         // Getting the distance between ac and current action
         double dist = ac.get_dist(*it);
 
-        // If verbose printing output
+        // If verbose print output
         if (verbose) {
             ROS_INFO("Action %d (%s): %d items: %f", count,
                     it->get_label().c_str(), it->size(), dist);

@@ -49,9 +49,17 @@ class DTW {
         static double quaternion_distance(const geometry_msgs::Quaternion&,
                 const geometry_msgs::Quaternion&);
 
+        /**
+         * Calculates the distance between the two joint states
+         * Returns the distance
+         */
         static double joint_distance(const sensor_msgs::JointState&,
                 const sensor_msgs::JointState&);
 
+        /**
+         * Calculates the distance between two poses from the joint state
+         * Returns the distance between the two radians
+         */
         static double pos_dist(double, double);
 };
 

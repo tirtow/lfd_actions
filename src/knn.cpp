@@ -122,11 +122,12 @@ string confirm_guess(const string& guess) {
  */
 void print_err() {
     cout << "knn: Missing required command line argument" << endl
-         << "Usage: rosrun lfd_actions knn -d <file> [-hv] [-k <int>]"
+         << "Usage: rosrun lfd_actions knn -d <file> [-hvcs] [-k <int>]"
          << " [-t <file>]" << endl
          << "Options:" << endl
          << "  -h           Print this help message." << endl
          << "  -v           Optional verbose flag." << endl
+         << "  -c           Optional record a group of actions" << endl
          << "  -s           Optional supervise flag." << endl
          << "  -d <file>    The dataset file." << endl
          << "  -t <file>    The test file." << endl

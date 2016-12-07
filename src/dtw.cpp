@@ -23,7 +23,6 @@ double DTW::min_diff(const Action& x, const Action& y) {
     // Getting the differences
     Action::pose_cit x_poses = x.pose_begin();
     Action::joint_cit x_joints = x.joint_begin();
-
     for (int row = 0; row < rows; row++) {
         Action::pose_cit y_poses = y.pose_begin();
         Action::joint_cit y_joints = y.joint_begin();
@@ -37,12 +36,12 @@ double DTW::min_diff(const Action& x, const Action& y) {
         x_joints++;
     }
 
-    // Setting the first row
+    // Setting the first row of costs
     for (int c = 0; c < cols; c++) {
         costs[0][c] = diffs[0][c];
     }
 
-    // Setting the first column
+    // Setting the first column of costs
     for (int r = 0; r < rows; r++) {
         costs[r][0] = diffs[r][0];
     }
@@ -51,12 +50,13 @@ double DTW::min_diff(const Action& x, const Action& y) {
     for (int r = 1; r < rows; r++) {
         for (int c = 1; c < cols; c++) {
             costs[r][c] = diffs[r][c]
-                    + DTW::min(diffs[r - 1][c - 1], diffs[r - 1][c],
+                    + DTW::min(diffs[r - 1][c - 1],
+                            diffs[r - 1][c],
                             diffs[r][c - 1]);
         }
     }
 
-    // Returning the last grid
+    // Returning the minimum difference between the two Actions
     return costs[rows - 1][cols - 1];
 }
 
@@ -100,6 +100,7 @@ double DTW::quaternion_distance(const Quaternion& c, const Quaternion& d) {
 double DTW::joint_distance(const JointState& x, const JointState& y) {
     double pos_diff = 0;
 
+    // Getting distance from just the finger positions
     for (int i = 6; i < NUM_JOINTS; i++) {
         pos_diff += pos_dist(x.position[i], y.position[i]);
     }
@@ -108,13 +109,14 @@ double DTW::joint_distance(const JointState& x, const JointState& y) {
 }
 
 double DTW::pos_dist(double x, double y) {
+    // Getting the distance
     double two_pi = 2 * M_PI;
     double diff = abs(y - x);
 
+    // Moving the difference to [-PI, PI]
     while (diff > M_PI) {
         diff -= two_pi;
     }
-
     while (diff < M_PI) {
         diff += two_pi;
     }
