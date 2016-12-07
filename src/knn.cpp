@@ -41,10 +41,12 @@ const string CART_TOPIC = "/mico_arm_driver/out/tool_position";
 list<Pose> poses;
 list<JointState> joints;
 list<ros::Time> times;
+vector<Action> actions;
 
 // Values to compare previous
 JointState prev_jointstate;
 Pose prev_pose;
+bool group = false;
 
 /**
  * Reads a character without blocking execution
@@ -173,9 +175,15 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
         times.push_back(cart->header.stamp);
 
         // Getting the difference
-        double diff = get_difference(*joint, cart->pose);
-        if (diff < THRESHOLD) {
-            ROS_INFO("Difference: %f", diff);
+        if (group) {
+            double diff = get_difference(*joint, cart->pose);
+            if (diff < THRESHOLD) {
+                ROS_INFO("Difference: %f", diff);
+                actions.push_back(Action(poses, joints, times));
+                poses.clear();
+                joints.clear();
+                times.clear();
+            }
         }
     }
 }
@@ -192,6 +200,14 @@ void perform_classification(Dataset& dataset, Action& ac, Action& ac_offset,
     if (supervise) {
         ac.set_label(confirm_guess(guess));
         dataset.update(ac);
+    }
+}
+
+void perform_group_classification(Dataset& dataset, bool verbose, bool supervise) {
+    for (Action::action_cit it = actions.begin(); it != actions.end(); it++) {
+        Action ac(*it);
+        Action offset(*it);
+        perform_classification(dataset, ac, offset, verbose, supervise);
     }
 }
 
@@ -222,12 +238,16 @@ void record(Dataset& dataset, bool verbose, bool supervise) {
         }
         cout << endl;
 
-        // Creating the recorded action
-        Action ac(poses, joints, times);
-        Action ac_offset(poses, joints, times);
+        if (group) {
+            perform_group_classification(dataset, verbose, supervise);
+        } else {
+            // Creating the recorded action
+            Action ac(poses, joints, times);
+            Action ac_offset(poses, joints, times);
         
-        // Performing the classification
-        perform_classification(dataset, ac, ac_offset, verbose, supervise);
+            // Performing the classification
+            perform_classification(dataset, ac, ac_offset, verbose, supervise);
+        }
 
         again = repeat();
     }
@@ -300,6 +320,7 @@ int main(int argc, char** argv) {
             // Other flags
             verbose = verbose || argv_str == "-v";
             supervise = supervise || argv_str == "-s";
+            group = group || argv_str == "-g";
         }
     }
 
