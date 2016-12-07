@@ -133,6 +133,11 @@ void print_err() {
          << "  -k <int>     The number of nearest neighbors" << endl;
 }
 
+/**
+ * Gets the difference between the current joint state and the previous
+ * joint state
+ * Returns the difference
+ */
 double get_joint_diff(const JointState new_jointstate) {
     double diff = 0;
     for (int i = 0; i < NUM_JOINTS; i++) {
@@ -144,6 +149,10 @@ double get_joint_diff(const JointState new_jointstate) {
     return diff;
 }
 
+/**
+ * Gets the difference between the current pose and the previous pose
+ * Returns the difference
+ */
 double get_pose_diff(const Pose new_pose) {
     double diff = 0;
     
@@ -159,10 +168,17 @@ double get_pose_diff(const Pose new_pose) {
     return diff;
 }
 
+/**
+ * Gets the difference between the joint states and poses
+ * Returns the absolute value of the difference
+ */
 double get_difference(const JointState new_jointstate, const Pose new_pose) {
     return abs(get_joint_diff(new_jointstate) + get_pose_diff(new_pose));
 }
 
+/**
+ * Callback to get the joint states and the cartesian pose of the arm
+ */
 void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& cart) {
     // Getting the names
     vector<string> names = joint->name;
@@ -188,10 +204,13 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
     }
 }
 
-void perform_classification(Dataset& dataset, Action& ac, Action& ac_offset,
-        bool verbose, bool supervise) {
+/**
+ * Performs the classification on the Action and prompts if supervised
+ */
+void perform_classification(Dataset& dataset, Action& ac, bool verbose,
+        bool supervise) {
     // Guessing the classification
-    string guess = dataset.guess_classification(ac_offset, verbose);
+    string guess = dataset.guess_classification(ac, verbose);
 
     // Print out the guess for the action
     print_guess(guess);
@@ -203,11 +222,13 @@ void perform_classification(Dataset& dataset, Action& ac, Action& ac_offset,
     }
 }
 
+/**
+ * Performs the classification on a group of Actions
+ */
 void perform_group_classification(Dataset& dataset, bool verbose, bool supervise) {
     for (Action::action_cit it = actions.begin(); it != actions.end(); it++) {
         Action ac(*it);
-        Action offset(*it);
-        perform_classification(dataset, ac, offset, verbose, supervise);
+        perform_classification(dataset, ac, verbose, supervise);
     }
 }
 
@@ -238,21 +259,25 @@ void record(Dataset& dataset, bool verbose, bool supervise) {
         }
         cout << endl;
 
+        // Checking if running a group of Actions or a single Action
         if (group) {
             perform_group_classification(dataset, verbose, supervise);
         } else {
             // Creating the recorded action
             Action ac(poses, joints, times);
-            Action ac_offset(poses, joints, times);
         
             // Performing the classification
-            perform_classification(dataset, ac, ac_offset, verbose, supervise);
+            perform_classification(dataset, ac, verbose, supervise);
         }
 
         again = repeat();
     }
 }
 
+/**
+ * Performs the classification on a test file of actions
+ * Reads the file line by line and performs the classification on each line
+ */
 void test_file(Dataset& dataset, const string& file, bool verbose, bool supervise) {
     // Opening the test file
     ifstream is(file.c_str());
@@ -265,10 +290,9 @@ void test_file(Dataset& dataset, const string& file, bool verbose, bool supervis
         if (line != "") {
             // Getting the action
             Action ac(line);
-            Action ac_offset(line);
 
             // Performing the classification
-            perform_classification(dataset, ac, ac_offset, verbose, supervise);
+            perform_classification(dataset, ac, verbose, supervise);
             cout << endl;
         }
     }

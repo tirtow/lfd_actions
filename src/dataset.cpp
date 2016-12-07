@@ -83,7 +83,7 @@ void Dataset::update(Action& ac) {
     action_set.push_back(ac);
 }
 
-string Dataset::guess_classification(Action& ac, bool verbose) {
+string Dataset::guess_classification(Action ac, bool verbose) {
     ac.offset(base);
     return guess_classification(ac, base_k, verbose);
 }

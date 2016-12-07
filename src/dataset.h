@@ -34,7 +34,7 @@ class Dataset {
          * Calls the overloaded guess_classification passing base_k
          * as the value for k
          */
-        std::string guess_classification(Action&, bool);
+        std::string guess_classification(Action, bool);
 
         /**
          * Gets the offset used by this Dataset
