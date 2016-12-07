@@ -2,7 +2,7 @@ FRI Project to classify actions based on demonstration from a person
 
 Recording data:
 - General use:
-    - `rosrun lfd_actions knn -d <file> [0hvcs] [-k <int>] [-t <file>]`
+    - `rosrun lfd_actions knn -d <file> [-hvcs] [-k <int>] [-t <file>]`
 
 - Example uses:
     - `rosrun lfd_action knn -h` will display the avaliable options
