@@ -128,7 +128,7 @@ string confirm_guess(const string& guess) {
  */
 void print_err() {
     cout << "knn: Missing required command line argument" << endl
-         << "Usage: rosrun lfd_actions knn -d <file> [-hvcs] [-k <int>]"
+         << "Usage: rosrun lfd_actions classifier -d <file> [-hvcs] [-k <int>]"
          << " [-t <file>]" << endl
          << "Options:" << endl
          << "  -h           Print this help message." << endl
@@ -389,7 +389,7 @@ void test_file(Dataset& dataset, const string& file, bool verbose, bool supervis
 
 int main(int argc, char** argv) {
     // Initializing the ros node
-    ros::init(argc, argv, "knn");
+    ros::init(argc, argv, "classifier");
     ros::NodeHandle n;
 
     // Getting command line arguments

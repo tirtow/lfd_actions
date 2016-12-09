@@ -135,8 +135,8 @@ include_directories(
 # add_dependencies(lfd_actions ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(knn src/knn.cpp src/action.cpp src/dtw.cpp)
-target_link_libraries(knn ${catkin_LIBRARIES})
+add_executable(classifier src/classifier.cpp src/action.cpp src/dtw.cpp)
+target_link_libraries(classifier ${catkin_LIBRARIES})
 
 add_executable(recorder src/recorder.cpp src/action.cpp src/dtw.cpp)
 target_link_libraries(recorder ${catkin_LIBRARIES})
