@@ -114,8 +114,13 @@ void record(ofstream& os) {
         }
         cout << endl;
 
+        string label;
+        cout << "Enter label: ";
+        cin >> label;
+
         // Creating and writing the recorded action
         Action ac(poses, joints, times);
+        ac.set_label(label);
         ac.print(os);
         
         // Getting whether to repeat
