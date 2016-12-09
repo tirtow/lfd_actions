@@ -83,7 +83,6 @@ class Action {
 
         /**
          * Calculates the distance between this Action and another Action
-         * Returns the distance
          */
         double get_dist(const Action&) const;
 

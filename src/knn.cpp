@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -32,6 +33,7 @@ using geometry_msgs::Pose;
 using geometry_msgs::PoseStamped;
 using sensor_msgs::JointState;
 using std::list;
+using std::setw;
 
 // The topic the arm joints publish to
 const string ARM_TOPIC = "/joint_states";
@@ -47,6 +49,10 @@ vector<Action> actions;
 JointState prev_jointstate;
 Pose prev_pose;
 bool group = false;
+
+// Maps for confusion matrix
+map<string, vector<string> > results;
+int longest = 0;
 
 /**
  * Reads a character without blocking execution
@@ -156,7 +162,7 @@ double get_joint_diff(const JointState new_jointstate) {
  */
 double get_pose_diff(const Pose new_pose) {
     double diff = 0;
-    
+
     diff += new_pose.position.x - prev_pose.position.x;
     diff += new_pose.position.y - prev_pose.position.y;
     diff += new_pose.position.z - prev_pose.position.z;
@@ -208,7 +214,7 @@ void callback(const JointState::ConstPtr& joint, const PoseStamped::ConstPtr& ca
 /**
  * Performs the classification on the Action and prompts if supervised
  */
-void perform_classification(Dataset& dataset, Action& ac, bool verbose,
+string perform_classification(Dataset& dataset, Action& ac, bool verbose,
         bool supervise) {
     // Guessing the classification
     string guess = dataset.guess_classification(ac, verbose);
@@ -221,6 +227,8 @@ void perform_classification(Dataset& dataset, Action& ac, bool verbose,
         ac.set_label(confirm_guess(guess));
         dataset.update(ac);
     }
+
+    return guess;
 }
 
 /**
@@ -266,12 +274,83 @@ void record(Dataset& dataset, bool verbose, bool supervise) {
         } else {
             // Creating the recorded action
             Action ac(poses, joints, times);
-        
+
             // Performing the classification
             perform_classification(dataset, ac, verbose, supervise);
         }
 
         again = repeat();
+    }
+}
+
+map<string, int> get_counts(const vector<string>& values) {
+    map<string, int> counts;
+    for (vector<string>::const_iterator it = values.begin();
+            it != values.end(); it++) {
+        counts[*it]++;
+    }
+
+    return counts;
+}
+
+/**
+ * Prints the results of a run against a test file
+ * Prints each action label and every classification an action
+ * of that type was classified as. Prints each action and the
+ * number of correct and incorrect guesses
+ */
+void print_results() {
+    map<string, int> correct;
+    map<string, int> incorrect;
+    int total_correct = 0;
+    int total = 0;
+
+    if (results.size() > 0) {
+        // Printing the classifications of each action
+        for (map<string, vector<string> >::const_iterator results_it = results.begin();
+                results_it != results.end(); results_it++) {
+            map<string, int> counts = get_counts(results_it->second);
+            cout << setw(longest) << std::left << results_it->first << endl;
+
+            for (map<string, int>::const_iterator it = counts.begin();
+                    it != counts.end(); it++) {
+                total += it->second;
+                if (it->first == results_it->first) {
+                    correct[results_it->first] += it->second;
+                    total_correct += it->second;
+                } else {
+                    incorrect[results_it->first] += it->second;
+                }
+
+                cout << "  - " << setw(longest) << std::left << it->first << ": "
+                     << it->second << endl;
+            }
+            cout << endl;
+        }
+
+        // Printing the number of correct and incorrect classifications
+        map<string, int>::const_iterator correct_it = correct.begin();
+        cout << setw(longest) << "Label" << setw(10) << std::right
+             << "Correct" << setw(10) << "Incorrect" << endl;
+        for (int i = 0; i < longest + 20; i++) {
+            cout << "-";
+        }
+        cout << endl;
+
+        while (correct_it != correct.end()) {
+            cout << setw(longest) << std::left << correct_it->first
+                 << setw(10) << std::right << correct_it->second
+                 << setw(10) << std::right << incorrect[correct_it->first] << endl;
+
+            correct_it++;
+        }
+
+        // Printing the totals and percent correct
+        cout << endl;
+        cout << "Total:   " << total << endl;
+        cout << "Correct: " << total_correct << endl;
+        cout << "Percent correct: " << (((double) total_correct) / total) * 100
+             << "%" << endl;
     }
 }
 
@@ -287,16 +366,25 @@ void test_file(Dataset& dataset, const string& file, bool verbose, bool supervis
     while (is) {
         string line;
         getline(is, line);
-        
+
         if (line != "") {
             // Getting the action
             Action ac(line);
 
             // Performing the classification
-            perform_classification(dataset, ac, verbose, supervise);
+            string guess = perform_classification(dataset, ac, verbose, supervise);
+
+            // Updating confusion matrix
+            if (guess != "" && ac.get_label() != "") {
+                results[ac.get_label()].push_back(guess);
+                longest = guess.length() > longest ? guess.length() : longest;
+            }
+
             cout << endl;
         }
     }
+
+    print_results();
 }
 
 int main(int argc, char** argv) {

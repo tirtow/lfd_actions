@@ -6,7 +6,7 @@
 #include <ros/ros.h>
 
 #define NUM_JOINTS 8
-#define JOINT_WEIGHT 10
+#define VEL_WEIGHT 100
 
 using geometry_msgs::Point;
 using geometry_msgs::Pose;
@@ -36,14 +36,15 @@ double DTW::min_diff(const Action& x, const Action& y) {
         x_joints++;
     }
 
+    costs[0][0] = diffs[0][0];
     // Setting the first row of costs
-    for (int c = 0; c < cols; c++) {
-        costs[0][c] = diffs[0][c];
+    for (int c = 1; c < cols; c++) {
+        costs[0][c] = costs[0][c - 1] + diffs[0][c];
     }
 
     // Setting the first column of costs
-    for (int r = 0; r < rows; r++) {
-        costs[r][0] = diffs[r][0];
+    for (int r = 1; r < rows; r++) {
+        costs[r][0] = costs[r - 1][0] + diffs[r][0];
     }
 
     // Filling in the costs
@@ -70,9 +71,11 @@ double DTW::min(double x, double y, double z) {
 
 double DTW::distance(const Pose& p1, const Pose& p2,
         const JointState& js1, const JointState& js2) {
-    return position_distance(p1.position, p2.position)
-            + quaternion_distance(p1.orientation, p2.orientation)
-            + joint_distance(js1, js2);
+    double pos = position_distance(p1.position, p2.position);
+    double quat = quaternion_distance(p1.orientation, p2.orientation);
+    double joint = joint_distance(js1, js2);
+
+    return pos + quat + joint;
 }
 
 double DTW::position_distance(const Point& x, const Point& y) {
@@ -81,7 +84,6 @@ double DTW::position_distance(const Point& x, const Point& y) {
 	double dz = pow(y.z - x.z, 2);
 	double dist = sqrt(dx + dy + dz);
 
-	// Returning the sum of the distances
 	return dist;
 }
 
@@ -99,27 +101,36 @@ double DTW::quaternion_distance(const Quaternion& c, const Quaternion& d) {
 
 double DTW::joint_distance(const JointState& x, const JointState& y) {
     double pos_diff = 0;
+    double vel_diff = 0;
 
-    // Getting distance from just the finger positions
-    for (int i = 6; i < NUM_JOINTS; i++) {
+    // Getting the differences between the joint states
+    for (int i = 0; i < NUM_JOINTS; i++) {
         pos_diff += pos_dist(x.position[i], y.position[i]);
+        vel_diff += vel_dist(x.velocity[i], y.velocity[i]);
     }
 
-    return pos_diff * JOINT_WEIGHT;
+    return pos_diff + (vel_diff * VEL_WEIGHT);
+}
+
+double DTW::reduce_radian(double x) {
+    while (x < M_PI) {
+        x += (2 * M_PI);
+    }
+    while (x > M_PI) {
+        x -= (2 * M_PI);
+    }
+
+    return x;
 }
 
 double DTW::pos_dist(double x, double y) {
-    // Getting the distance
-    double two_pi = 2 * M_PI;
-    double diff = abs(y - x);
+    // Reducing the radians
+    x = reduce_radian(x);
+    y = reduce_radian(y);
 
-    // Moving the difference to [-PI, PI]
-    while (diff > M_PI) {
-        diff -= two_pi;
-    }
-    while (diff < M_PI) {
-        diff += two_pi;
-    }
+    return fabs(x - y);
+}
 
-    return diff;
+double DTW::vel_dist(double x, double y) {
+    return fabs(y -x);
 }

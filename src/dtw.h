@@ -16,20 +16,17 @@ class DTW {
         /**
          * Calculates the minimum difference between two actions
          * using dynamic time warping.
-         * Returns the minimum difference between the actions
          */
         static double min_diff(const Action&, const Action&);
 
     private:
         /**
          * Gets the minium value between three doubles
-         * Returns the minimum value
          */
         static double min(double, double, double);
 
         /**
          * Calculates the distance between two Poses
-         * Returns the distance
          */
         static double distance(const geometry_msgs::Pose&,
                 const geometry_msgs::Pose&, const sensor_msgs::JointState&,
@@ -37,30 +34,36 @@ class DTW {
 
         /**
          * Calculates the distance between two points using euclidean distance
-         * Returns the distance
          */
         static double position_distance(const geometry_msgs::Point&,
                 const geometry_msgs::Point&);
 
         /**
          * Calculates the distance between two quaternions
-         * Returns the distance
          */
         static double quaternion_distance(const geometry_msgs::Quaternion&,
                 const geometry_msgs::Quaternion&);
 
         /**
          * Calculates the distance between the two joint states
-         * Returns the distance
          */
         static double joint_distance(const sensor_msgs::JointState&,
                 const sensor_msgs::JointState&);
 
         /**
-         * Calculates the distance between two poses from the joint state
-         * Returns the distance between the two radians
+         * Calculates the distance between two positions from the joint state
          */
         static double pos_dist(double, double);
+
+        /**
+         * Calculates the distance between two velocities from the joint state
+         */
+        static double vel_dist(double, double);
+
+        /**
+         * Reduces a radian such that it falls in the range [-PI, PI]
+         */
+        static double reduce_radian(double);
 };
 
 #endif

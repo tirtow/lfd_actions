@@ -30,6 +30,7 @@ Dataset::Dataset(const string& file, bool verbose, int k = 1) : base_k(k) {
             // Getting the base Action to offset the others
             Action ac(line);
             base = ac.pose_begin()->position;
+            //ac.offset(base);
             action_set.push_back(ac);
 
             // If verbose sum the number of each label
@@ -92,16 +93,12 @@ string Dataset::guess_classification(Action ac, bool verbose) {
 }
 
 string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
-    if (k == 0) {
-        // Base case: empty dataset
-        return "";
-    }
-
     // vectors to store the k closest values
     vector<double> closest_dist;
     vector<string> closest_str;
     vector<int> closest_num;
     int count= 1;
+    int ties = 1;
 
     // If verbose print out the size of the recorded action
     if (verbose) {
@@ -153,16 +150,19 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
     // Getting the guess
     string guess = get_max_in_map(get_counts(closest_str));
 
-    if (guess == "") {
+    // Checking for tie
+    while (guess == "") {
         // Had a tie, reducing k by 1 until tie is broken
         if (verbose) {
-            ROS_INFO("Breaking tie. Setting k to %d", k - 1);
+            ROS_INFO("Breaking tie. Setting k to %d", k - ties++);
         }
 
-        return guess_classification(ac, k - 1, verbose);
-    } else {
-        return guess;
+        // Removing one and breaking tie
+        closest_str.pop_back();
+        guess = get_max_in_map(get_counts(closest_str));
     }
+
+    return guess;
 }
 
 bool Dataset::insert_dist(double dist, const string& label,
