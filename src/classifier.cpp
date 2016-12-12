@@ -380,8 +380,14 @@ void test_file(Dataset& dataset, const string& file, bool verbose, bool supervis
                 longest = guess.length() > longest ? guess.length() : longest;
             }
 
-            cout << endl;
+            if (verbose) {
+                cout << endl;
+            }
         }
+    }
+
+    if (!verbose) {
+        cout << endl;
     }
 
     print_results();

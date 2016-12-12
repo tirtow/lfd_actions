@@ -143,8 +143,6 @@ string Dataset::guess_classification(const Action& ac, int k, bool verbose) {
             ROS_INFO("%d.) Action %d: %f (%s)", i + 1, closest_num[i],
                     closest_dist[i], closest_str[i].c_str());
         }
-
-        cout << endl;
     }
 
     // Getting the guess
